@@ -1,6 +1,8 @@
 package service
 
 import (
+	"golang.org/x/crypto/bcrypt"
+	"log"
 	"pictureloader/database/postgres"
 	"pictureloader/models"
 )
@@ -14,17 +16,28 @@ func NewUserService(database postgres.UserRepository) *UserService {
 }
 
 func (u *UserService) RegisterUser(user *models.User) error {
-	user.HashedPassword = user.HashedPassword + "_HashedPassword"
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	user.Password = string(hashedPassword)
 	return u.database.CreateNewUser(user)
 }
 
-func (u *UserService) LoginUser(username string, password string) (bool, int) {
-	user, err := u.database.GetUserByUsername(username)
-	if user == nil || err != nil {
+func (u *UserService) LoginUser(userLogin *models.UserLogin) (bool, int) {
+	user, err := u.database.GetUserByUsername(userLogin.Username)
+	if err != nil {
+		log.Printf("Error fetching user: %v", err)
 		return false, -1
 	}
-	if user.HashedPassword == password+"_HashedPassword" {
-		return true, user.ID
+	if user == nil {
+		log.Printf("User not found with username: %s", userLogin.Username)
+		return false, -1
 	}
-	return false, -1
+
+	// Сравниваем хэш пароля с введенным паролем
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(userLogin.Password))
+	if err != nil {
+		log.Printf("Incorrect password for user: %s", userLogin.Username)
+		return false, -1
+	}
+
+	return true, user.ID
 }

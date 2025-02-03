@@ -2,14 +2,20 @@ package main
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/swaggo/http-swagger"
 	"log"
 	"net/http"
 	"pictureloader/database/postgres"
+	_ "pictureloader/docs"
 	"pictureloader/image_storage/minio"
 	"pictureloader/rest"
 	"pictureloader/service"
 )
 
+// @title Imgur 2.0 API
+// @version 1.0
+// @description API для загрузки и просмотра картинок с регистрацией
+// @host localhost:8080
 func main() {
 	//minio and image storage init
 	minioprov, err := minio.NewMinioProvider("localhost:9000", "minioadmin", "minioadmin", false)
@@ -36,6 +42,7 @@ func main() {
 
 	//router init
 	mainRouter := mux.NewRouter()
+	mainRouter.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 	rest.PictureRouter(mainRouter, picturesServer)
 	rest.UserRouter(mainRouter, userServer)
 	log.Println("Routers are running")

@@ -3,6 +3,7 @@ package rest
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	jwt2 "github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
@@ -10,7 +11,7 @@ import (
 	"log"
 	"net/http"
 	"pictureloader/models"
-	"pictureloader/safety/jwt"
+	"pictureloader/safety/jwtutils"
 	"pictureloader/service"
 	"time"
 )
@@ -24,19 +25,26 @@ func PictureNewServer(core *service.PictureLoader) *PictureServer {
 }
 
 func PictureRouter(api *mux.Router, server *PictureServer) {
-	jwtUtils := jwt.UtilsJWT{}
+	jwtUtils := jwtutils.UtilsJWT{}
 	router := api.PathPrefix("/pictures").Subrouter()
 
 	privateRouter := router.PathPrefix("").Subrouter()
-	privateRouter.HandleFunc("/create", server.UploadFileHandler).Methods("POST")
+	privateRouter.HandleFunc("/create", server.UploadImageHandler).Methods("POST")
 	privateRouter.HandleFunc("/my", server.MyPictures).Methods("GET")
 	privateRouter.Use(jwtUtils.AuthMiddleware)
 
 	router.HandleFunc("/{imageName}", server.DownloadFileHandler).Methods("GET")
 }
 
-// UploadFileHandler Обработчик для загрузки файла
-func (s *PictureServer) UploadFileHandler(w http.ResponseWriter, r *http.Request) {
+// UploadImageHandler handles image upload
+// @Summary Upload an image
+// @Description This endpoint allows a user to upload an image file.
+// @Tags Image
+// @Accept  multipart/form-data
+// @Produce  json
+// @Param file formData file true "Image file"
+// @Router /pictures/create [post]
+func (s *PictureServer) UploadImageHandler(w http.ResponseWriter, r *http.Request) {
 
 	file, _, err := r.FormFile("file")
 	if err != nil {
@@ -72,11 +80,17 @@ func (s *PictureServer) UploadFileHandler(w http.ResponseWriter, r *http.Request
 		http.Error(w, fmt.Sprintf("Error uploading file: %v", err), http.StatusInternalServerError)
 		return
 	}
-
-	log.Println("File uploaded successfully")
-	w.Write([]byte(fmt.Sprintf("File uploaded successfully with image name: %s", imageName)))
+	w.Write([]byte(`{"message":"Picture uploaded successfully.", "picture": "` + imageName + `"}`))
 }
 
+// DownloadFileHandler handles image download
+// @Summary Download an image
+// @Description This endpoint allows a user to download an image file.
+// @Tags Image
+// @Accept json
+// @Produce  json
+// @Param imageName path string true "Name of the image"
+// @Router /pictures/{imageName} [get]
 func (s *PictureServer) DownloadFileHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	imageName := vars["imageName"]
@@ -90,11 +104,17 @@ func (s *PictureServer) DownloadFileHandler(w http.ResponseWriter, r *http.Reque
 		http.Error(w, fmt.Sprintf("Error downloading file: %v", err), http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "text/html")
-	htmlContent := fmt.Sprintf("<img src=\"%s\" />", imageURL)
-	w.Write([]byte(htmlContent))
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"result":"` + imageURL + `"}`))
 }
 
+// MyPictures handles all user images
+// @Summary Download an image(s)
+// @Description This endpoint allows a user to download his images.
+// @Tags Image
+// @Accept json
+// @Produce  json
+// @Router /pictures/my [get]
 func (s *PictureServer) MyPictures(w http.ResponseWriter, r *http.Request) {
 	claims := r.Context().Value("claims").(jwt2.MapClaims)
 	sub := claims["sub"].(float64)
@@ -107,12 +127,13 @@ func (s *PictureServer) MyPictures(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Error fetching pictures: %v", err)
 	}
-	w.Header().Set("Content-Type", "text/html")
 
-	htmlContent := "<div style=\"display: flex; flex-wrap: wrap; gap: 10px;\">"
-	for _, imageURL := range imageURLS {
-		htmlContent += fmt.Sprintf("<img src=\"%s\" style=\"max-width: 100px;\" />", imageURL)
+	jsonResponce, err := json.Marshal(map[string][]string{"result": imageURLS})
+
+	if err != nil {
+		log.Printf("Error marshalling pictures: %v", err)
 	}
-	htmlContent += "</div>"
-	w.Write([]byte(htmlContent))
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonResponce)
 }
