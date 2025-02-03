@@ -1,0 +1,124 @@
+definitions:
+  models.Image:
+    properties:
+      url:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  models.User:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      images:
+        items:
+          $ref: '#/definitions/models.Image'
+        type: array
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  models.UserLogin:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API для загрузки и просмотра картинок с регистрацией
+  title: Imgur 2.0 API
+  version: "1.0"
+paths:
+  /pictures/{imageName}:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to download an image file.
+      parameters:
+      - description: Name of the image
+        in: path
+        name: imageName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Download an image
+      tags:
+      - Image
+  /pictures/create:
+    post:
+      consumes:
+      - multipart/form-data
+      description: This endpoint allows a user to upload an image file.
+      parameters:
+      - description: Image file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses: {}
+      summary: Upload an image
+      tags:
+      - Image
+  /pictures/my:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to download his images.
+      produces:
+      - application/json
+      responses: {}
+      summary: Download an image(s)
+      tags:
+      - Image
+  /users/login:
+    post:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to log in by providing their username
+        and password. If the credentials are correct, a JWT token will be generated
+        and returned in a cookie for session management.
+      parameters:
+      - description: User login credentials (username and password)
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserLogin'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BasicAuth: []
+      summary: Login an existing user
+      tags:
+      - User (ПРИ РЕГИСТРАЦИИ/ЛОГИНЕ НУЖНО РУЧКАМИ ВСТАВЛЯТЬ ВЫДАННУЮ КУКУ В БРАУЗЕР)
+  /users/register:
+    post:
+      consumes:
+      - application/json
+      description: This endpoint registers a new user, stores the user in the database,
+        and generates a JWT token for the user.
+      parameters:
+      - description: User data for registration
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses: {}
+      summary: Register a new user
+      tags:
+      - User (ПРИ РЕГИСТРАЦИИ/ЛОГИНЕ НУЖНО РУЧКАМИ ВСТАВЛЯТЬ ВЫДАННУЮ КУКУ В БРАУЗЕР)
+swagger: "2.0"
