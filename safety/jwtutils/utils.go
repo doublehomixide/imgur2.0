@@ -1,4 +1,4 @@
-package jwt
+package jwtutils
 
 import (
 	"fmt"
@@ -43,9 +43,17 @@ func (u *UtilsJWT) ValidateAndExtractPayload(tokenString string) (jwt.MapClaims,
 		return nil, err
 	}
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok {
-		return claims, nil
-	} else {
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
 		return nil, fmt.Errorf("cant get claims")
 	}
+	exp, ok := claims["exp"].(float64)
+	if !ok {
+		return nil, fmt.Errorf("exp claim is missing or invalid")
+	}
+
+	if int64(exp) <= time.Now().Unix() {
+		return nil, fmt.Errorf("token is expired")
+	}
+	return claims, nil
 }
