@@ -1,6 +1,8 @@
 definitions:
   models.Image:
     properties:
+      description:
+        type: string
       url:
         type: string
       user_id:
@@ -63,6 +65,11 @@ paths:
         name: file
         required: true
         type: file
+      - description: Image description
+        in: formData
+        name: desription
+        required: true
+        type: string
       produces:
       - application/json
       responses: {}
