@@ -47,6 +47,31 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/pictures/delete/{imageURL}": {
+            "delete": {
+                "description": "Delete an image for its url",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Image"
+                ],
+                "summary": "Delete an image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Image url",
+                        "name": "imageURL",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/pictures/my": {
             "get": {
                 "description": "This endpoint allows a user to download his images.",
@@ -79,8 +104,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Name of the image",
-                        "name": "imageName",
+                        "description": "URL of the image",
+                        "name": "imageURL",
                         "in": "path",
                         "required": true
                     }

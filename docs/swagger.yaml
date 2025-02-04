@@ -43,9 +43,9 @@ paths:
       - application/json
       description: This endpoint allows a user to download an image file.
       parameters:
-      - description: Name of the image
+      - description: URL of the image
         in: path
-        name: imageName
+        name: imageURL
         required: true
         type: string
       produces:
@@ -74,6 +74,23 @@ paths:
       - application/json
       responses: {}
       summary: Upload an image
+      tags:
+      - Image
+  /pictures/delete/{imageURL}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an image for its url
+      parameters:
+      - description: Image url
+        in: path
+        name: imageURL
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete an image
       tags:
       - Image
   /pictures/my:

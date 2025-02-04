@@ -33,7 +33,8 @@ func PictureRouter(api *mux.Router, server *PictureServer) {
 	privateRouter.HandleFunc("/my", server.MyPictures).Methods("GET")
 	privateRouter.Use(jwtUtils.AuthMiddleware)
 
-	router.HandleFunc("/{imageName}", server.DownloadFileHandler).Methods("GET")
+	router.HandleFunc("/{imageURL}", server.DownloadFileHandler).Methods("GET")
+	router.HandleFunc("/delete/{imageURL}", server.DeleteImageHadler).Methods("DELETE")
 }
 
 // UploadImageHandler handles image upload
@@ -92,11 +93,11 @@ func (s *PictureServer) UploadImageHandler(w http.ResponseWriter, r *http.Reques
 // @Tags Image
 // @Accept json
 // @Produce  json
-// @Param imageName path string true "Name of the image"
+// @Param imageURL path string true "URL of the image"
 // @Router /pictures/{imageName} [get]
 func (s *PictureServer) DownloadFileHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	imageName := vars["imageName"]
+	imageName := vars["imageURL"]
 
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
@@ -139,4 +140,28 @@ func (s *PictureServer) MyPictures(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonResponce)
+}
+
+// DeleteImageHadler delete image
+// @Summary Delete an image
+// @Description Delete an image for its url
+// @Tags Image
+// @Accept json
+// @Produce json
+// @Param imageURL path string true "Image url"
+// @Router /pictures/delete/{imageURL} [delete]
+func (s *PictureServer) DeleteImageHadler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	imageName := vars["imageURL"]
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	err := s.core.Delete(ctx, imageName)
+	if err != nil {
+		log.Printf("Error deleting image: %v", err)
+		http.Error(w, fmt.Sprintf("Error deleting image: %v", err), http.StatusInternalServerError)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"message":"Picture deleted successfully."}`))
 }
