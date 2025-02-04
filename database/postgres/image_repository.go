@@ -13,8 +13,8 @@ func NewImageRepository(db *gorm.DB) *ImageRepository {
 	return &ImageRepository{db: db}
 }
 
-func (i *ImageRepository) UploadImage(userID int, URL string) error {
-	imageModel := models.Image{URL: URL, UserID: userID}
+func (i *ImageRepository) UploadImage(userID int, URL string, description string) error {
+	imageModel := models.Image{URL: URL, UserID: userID, Desription: description}
 	return i.db.Create(imageModel).Error
 }
 

@@ -16,7 +16,7 @@ func (m *MinioProvider) UploadFile(ctx context.Context, object models.ImageUnit,
 		imageName,
 		object.Payload,
 		object.PayloadSize,
-		minio.PutObjectOptions{ContentType: "image/png"},
+		minio.PutObjectOptions{},
 	)
 	return imageName, err
 }
@@ -53,4 +53,9 @@ func (m *MinioProvider) GetFileURLS(ctx context.Context, imageURLS []string) ([]
 		}
 	}
 	return result, nil
+}
+
+func (m *MinioProvider) DeleteFileByURL(ctx context.Context, imageURL string) error {
+	err := m.client.RemoveObject(ctx, bucketName, imageURL, minio.RemoveObjectOptions{})
+	return err
 }

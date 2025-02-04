@@ -43,8 +43,10 @@ func PictureRouter(api *mux.Router, server *PictureServer) {
 // @Accept  multipart/form-data
 // @Produce  json
 // @Param file formData file true "Image file"
+// @Param desription formData string true "Image description"
 // @Router /pictures/create [post]
 func (s *PictureServer) UploadImageHandler(w http.ResponseWriter, r *http.Request) {
+	imgDesc := r.FormValue("desription")
 
 	file, _, err := r.FormFile("file")
 	if err != nil {
@@ -71,10 +73,11 @@ func (s *PictureServer) UploadImageHandler(w http.ResponseWriter, r *http.Reques
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 
-	claims := r.Context().Value("claims").(jwt2.MapClaims)
+	claims := r.Context().Value("claims").(jwt2.MapClaims) //извлечение из jwt
 	sub := claims["sub"].(float64)
 	userID := int(sub)
-	imageName, err := s.core.Upload(ctx, imageUnit, userID)
+
+	imageName, err := s.core.Upload(ctx, imageUnit, userID, imgDesc)
 	if err != nil {
 		log.Printf("Error uploading file: %v", err)
 		http.Error(w, fmt.Sprintf("Error uploading file: %v", err), http.StatusInternalServerError)

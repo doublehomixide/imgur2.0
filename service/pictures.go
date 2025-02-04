@@ -19,13 +19,13 @@ func NewPictureLoader(storage image_storage.ImageStorage, database *postgres.Ima
 	return &PictureLoader{storage, database}
 }
 
-func (p *PictureLoader) Upload(ctx context.Context, img models.ImageUnit, userID int) (string, error) {
+func (p *PictureLoader) Upload(ctx context.Context, img models.ImageUnit, userID int, description string) (string, error) {
 	url := strconv.Itoa(rand.Int())
 	imgName, err := p.storage.UploadFile(ctx, img, url)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = p.database.UploadImage(userID, url)
+	err = p.database.UploadImage(userID, url, description)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,4 +50,12 @@ func (p *PictureLoader) GetAllUserPictures(ctx context.Context, userID int) ([]s
 		return nil, err
 	}
 	return imageURLS, err
+}
+
+func (p *PictureLoader) Delete(ctx context.Context, imgName string) error {
+	err := p.storage.DeleteFileByURL(ctx, imgName)
+	if err != nil {
+		return err
+	}
+	return nil
 }

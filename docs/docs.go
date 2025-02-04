@@ -35,6 +35,13 @@ const docTemplate = `{
                         "name": "file",
                         "in": "formData",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Image description",
+                        "name": "desription",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {}
@@ -145,6 +152,9 @@ const docTemplate = `{
         "models.Image": {
             "type": "object",
             "properties": {
+                "description": {
+                    "type": "string"
+                },
                 "url": {
                     "type": "string"
                 },
