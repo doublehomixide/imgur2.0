@@ -22,9 +22,9 @@ type UserRegister struct {
 }
 
 type Image struct {
-	URL        string `gorm:"primary_key" json:"url"`
-	UserID     int    `json:"user_id"`
-	Desription string `json:"description" gorm:"size:150"`
+	URL         string `gorm:"primary_key" json:"url"`
+	UserID      int    `json:"user_id"`
+	Description string `json:"description" gorm:"size:150"`
 }
 
 type ImageUnit struct {

@@ -16,7 +16,7 @@ func (m *MinioProvider) UploadFile(ctx context.Context, object models.ImageUnit,
 		imageName,
 		object.Payload,
 		object.PayloadSize,
-		minio.PutObjectOptions{},
+		minio.PutObjectOptions{ContentType: "image/png"},
 	)
 	return imageName, err
 }

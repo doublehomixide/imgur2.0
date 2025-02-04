@@ -88,7 +88,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/pictures/{imageName}": {
+        "/pictures/{imageURL}": {
             "get": {
                 "description": "This endpoint allows a user to download an image file.",
                 "consumes": [

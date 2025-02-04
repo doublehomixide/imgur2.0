@@ -37,7 +37,7 @@ info:
   title: Imgur 2.0 API
   version: "1.0"
 paths:
-  /pictures/{imageName}:
+  /pictures/{imageURL}:
     get:
       consumes:
       - application/json

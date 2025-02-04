@@ -12,6 +12,8 @@ type UserRepository interface {
 }
 
 type ImageRepository interface {
-	UploadImage(userID int, URL string) error
-	GetUserImagesID(userID int) ([]models.Image, error)
+	UploadImage(userID int, URL string, description string) error
+	GetUserImagesID(userID int) ([]string, error)
+	GetImageDescription(imageURL string) (string, error)
+	DeleteImage(imageID string) error
 }

@@ -14,7 +14,7 @@ func NewImageRepository(db *gorm.DB) *ImageRepository {
 }
 
 func (i *ImageRepository) UploadImage(userID int, URL string, description string) error {
-	imageModel := models.Image{URL: URL, UserID: userID, Desription: description}
+	imageModel := models.Image{URL: URL, UserID: userID, Description: description}
 	return i.db.Create(imageModel).Error
 }
 
@@ -25,4 +25,18 @@ func (i *ImageRepository) GetUserImagesID(userID int) ([]string, error) {
 		return nil, err
 	}
 	return imageIDS, nil
+}
+
+func (i *ImageRepository) GetImageDescription(imageURL string) (string, error) {
+	var description string
+	err := i.db.Model(&models.Image{}).Where("url = ?", imageURL).Pluck("description", &description).Error
+	if err != nil {
+		return "", err
+	}
+	return description, nil
+}
+
+func (i *ImageRepository) DeleteImage(imageID string) error {
+	err := i.db.Where("url = ?", imageID).Delete(&models.Image{}).Error
+	return err
 }

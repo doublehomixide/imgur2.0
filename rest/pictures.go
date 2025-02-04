@@ -94,7 +94,7 @@ func (s *PictureServer) UploadImageHandler(w http.ResponseWriter, r *http.Reques
 // @Accept json
 // @Produce  json
 // @Param imageURL path string true "URL of the image"
-// @Router /pictures/{imageName} [get]
+// @Router /pictures/{imageURL} [get]
 func (s *PictureServer) DownloadFileHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	imageName := vars["imageURL"]
@@ -102,14 +102,14 @@ func (s *PictureServer) DownloadFileHandler(w http.ResponseWriter, r *http.Reque
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 
-	imageURL, err := s.core.Download(ctx, imageName)
+	imageURL, description, err := s.core.Download(ctx, imageName)
 	if err != nil {
 		log.Printf("Error downloading file from Minio: %v", err)
 		http.Error(w, fmt.Sprintf("Error downloading file: %v", err), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(`{"result":"` + imageURL + `"}`))
+	w.Write([]byte(`{"img":"` + imageURL + `", "desc": "` + description + `"}`))
 }
 
 // MyPictures handles all user images
@@ -161,6 +161,7 @@ func (s *PictureServer) DeleteImageHadler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		log.Printf("Error deleting image: %v", err)
 		http.Error(w, fmt.Sprintf("Error deleting image: %v", err), http.StatusInternalServerError)
+		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(`{"message":"Picture deleted successfully."}`))
