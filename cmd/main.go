@@ -5,6 +5,7 @@ import (
 	"github.com/swaggo/http-swagger"
 	"log"
 	"net/http"
+	config "pictureloader/cfg"
 	"pictureloader/database/postgres"
 	_ "pictureloader/docs"
 	"pictureloader/image_storage/minio"
@@ -17,13 +18,14 @@ import (
 // @description API для загрузки и просмотра картинок с регистрацией
 // @host localhost:8080
 func main() {
+	cfg := config.Init()
 	//minio and image storage init
-	minioprov, err := minio.NewMinioProvider("localhost:9000", "minioadmin", "minioadmin", false)
+	minioprov, err := minio.NewMinioProvider(cfg.MinioURL, cfg.MinioUSER, cfg.MinioPASSWORD, false)
 	if err != nil {
 		log.Fatalf("Failed to initialize Minio provider: %v", err)
 	}
 	log.Println("Minio provider initialized")
-	psqlDB := postgres.NewDataBase("postgres://postgres:1000@localhost:5432/db?sslmode=disable")
+	psqlDB := postgres.NewDataBase(cfg.PsqlDBPath)
 	log.Print("Postgres DB initialized\n\n")
 
 	//database and service related to the database init
@@ -47,8 +49,8 @@ func main() {
 	rest.UserRouter(mainRouter, userServer)
 	log.Println("Routers are running")
 
-	log.Println("Starting server on port 8080")
-	if err := http.ListenAndServe(":8080", mainRouter); err != nil {
+	log.Printf("Starting server on port %s", cfg.ServerPort)
+	if err := http.ListenAndServe(cfg.ServerPort, mainRouter); err != nil {
 		log.Fatalf("PictureServer failed to start: %v", err)
 	}
 }
