@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"gorm.io/gorm"
+	"log"
 	"pictureloader/models"
 )
 
@@ -38,5 +39,9 @@ func (i *ImageRepository) GetImageDescription(imageURL string) (string, error) {
 
 func (i *ImageRepository) DeleteImage(imageID string) error {
 	err := i.db.Where("url = ?", imageID).Delete(&models.Image{}).Error
-	return err
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
 }

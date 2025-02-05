@@ -47,31 +47,6 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/pictures/delete/{imageURL}": {
-            "delete": {
-                "description": "Delete an image for its url",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Image"
-                ],
-                "summary": "Delete an image",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Image url",
-                        "name": "imageURL",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {}
-            }
-        },
         "/pictures/my": {
             "get": {
                 "description": "This endpoint allows a user to download his images.",
@@ -111,15 +86,33 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {}
+            },
+            "delete": {
+                "description": "Delete an image for its url",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Image"
+                ],
+                "summary": "Delete an image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Image url",
+                        "name": "imageURL",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
             }
         },
         "/users/login": {
             "post": {
-                "security": [
-                    {
-                        "BasicAuth": []
-                    }
-                ],
                 "description": "This endpoint allows a user to log in by providing their username and password. If the credentials are correct, a JWT token will be generated and returned in a cookie for session management.",
                 "consumes": [
                     "application/json"
@@ -128,7 +121,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "User (ПРИ РЕГИСТРАЦИИ/ЛОГИНЕ НУЖНО РУЧКАМИ ВСТАВЛЯТЬ ВЫДАННУЮ КУКУ В БРАУЗЕР)"
+                    "User"
                 ],
                 "summary": "Login an existing user",
                 "parameters": [
@@ -145,6 +138,22 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/users/logout": {
+            "post": {
+                "description": "This endpoint allows a user to log out by deleting the authentication cookie from the client's browser.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Log out a user (delete authentication cookie)",
+                "responses": {}
+            }
+        },
         "/users/register": {
             "post": {
                 "description": "This endpoint registers a new user, stores the user in the database, and generates a JWT token for the user.",
@@ -155,7 +164,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "User (ПРИ РЕГИСТРАЦИИ/ЛОГИНЕ НУЖНО РУЧКАМИ ВСТАВЛЯТЬ ВЫДАННУЮ КУКУ В БРАУЗЕР)"
+                    "User"
                 ],
                 "summary": "Register a new user",
                 "parameters": [
@@ -177,6 +186,9 @@ const docTemplate = `{
         "models.Image": {
             "type": "object",
             "properties": {
+                "album_id": {
+                    "type": "integer"
+                },
                 "description": {
                     "type": "string"
                 },

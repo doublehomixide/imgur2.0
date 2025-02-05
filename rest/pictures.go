@@ -34,7 +34,7 @@ func PictureRouter(api *mux.Router, server *PictureServer) {
 	privateRouter.Use(jwtUtils.AuthMiddleware)
 
 	router.HandleFunc("/{imageURL}", server.DownloadFileHandler).Methods("GET")
-	router.HandleFunc("/delete/{imageURL}", server.DeleteImageHadler).Methods("DELETE")
+	router.HandleFunc("/{imageURL}", server.DeleteImageHadler).Methods("DELETE")
 }
 
 // UploadImageHandler handles image upload
@@ -149,7 +149,7 @@ func (s *PictureServer) MyPictures(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param imageURL path string true "Image url"
-// @Router /pictures/delete/{imageURL} [delete]
+// @Router /pictures/{imageURL} [delete]
 func (s *PictureServer) DeleteImageHadler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	imageName := vars["imageURL"]

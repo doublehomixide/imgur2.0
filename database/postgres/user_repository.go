@@ -33,6 +33,7 @@ func (u *UserRepository) GetUserByUsername(username string) (*models.User, error
 	err := u.db.Where("username = ?", username).First(&user).Error
 	if err != nil {
 		log.Println(err)
+		return nil, err
 	}
 	return &user, nil
 }

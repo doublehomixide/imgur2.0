@@ -1,6 +1,8 @@
 definitions:
   models.Image:
     properties:
+      album_id:
+        type: integer
       description:
         type: string
       url:
@@ -38,6 +40,22 @@ info:
   version: "1.0"
 paths:
   /pictures/{imageURL}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an image for its url
+      parameters:
+      - description: Image url
+        in: path
+        name: imageURL
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete an image
+      tags:
+      - Image
     get:
       consumes:
       - application/json
@@ -76,23 +94,6 @@ paths:
       summary: Upload an image
       tags:
       - Image
-  /pictures/delete/{imageURL}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete an image for its url
-      parameters:
-      - description: Image url
-        in: path
-        name: imageURL
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses: {}
-      summary: Delete an image
-      tags:
-      - Image
   /pictures/my:
     get:
       consumes:
@@ -121,11 +122,21 @@ paths:
       produces:
       - application/json
       responses: {}
-      security:
-      - BasicAuth: []
       summary: Login an existing user
       tags:
-      - User (ПРИ РЕГИСТРАЦИИ/ЛОГИНЕ НУЖНО РУЧКАМИ ВСТАВЛЯТЬ ВЫДАННУЮ КУКУ В БРАУЗЕР)
+      - User
+  /users/logout:
+    post:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to log out by deleting the authentication
+        cookie from the client's browser.
+      produces:
+      - application/json
+      responses: {}
+      summary: Log out a user (delete authentication cookie)
+      tags:
+      - User
   /users/register:
     post:
       consumes:
@@ -144,5 +155,5 @@ paths:
       responses: {}
       summary: Register a new user
       tags:
-      - User (ПРИ РЕГИСТРАЦИИ/ЛОГИНЕ НУЖНО РУЧКАМИ ВСТАВЛЯТЬ ВЫДАННУЮ КУКУ В БРАУЗЕР)
+      - User
 swagger: "2.0"
