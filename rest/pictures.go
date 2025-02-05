@@ -8,7 +8,7 @@ import (
 	jwt2 "github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"pictureloader/models"
 	"pictureloader/safety/jwtutils"
@@ -51,8 +51,8 @@ func (s *PictureServer) UploadImageHandler(w http.ResponseWriter, r *http.Reques
 
 	file, _, err := r.FormFile("file")
 	if err != nil {
-		log.Printf("Error retrieving file: %v", err)
-		http.Error(w, "Error retrieving file", http.StatusBadRequest)
+		slog.Error("Error retrieving file", "error", err)
+		http.Error(w, "Error retrieving file", http.StatusInternalServerError)
 		return
 	}
 	defer file.Close()
@@ -60,7 +60,7 @@ func (s *PictureServer) UploadImageHandler(w http.ResponseWriter, r *http.Reques
 	var buf bytes.Buffer
 	size, err := io.Copy(&buf, file)
 	if err != nil {
-		log.Printf("Error reading file to buffer: %v", err)
+		slog.Error("Error retrieving file", "error", err)
 		http.Error(w, "Error processing file", http.StatusInternalServerError)
 		return
 	}
@@ -80,7 +80,6 @@ func (s *PictureServer) UploadImageHandler(w http.ResponseWriter, r *http.Reques
 
 	imageName, err := s.core.Upload(ctx, imageUnit, userID, imgDesc)
 	if err != nil {
-		log.Printf("Error uploading file: %v", err)
 		http.Error(w, fmt.Sprintf("Error uploading file: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -104,7 +103,6 @@ func (s *PictureServer) DownloadFileHandler(w http.ResponseWriter, r *http.Reque
 
 	imageURL, description, err := s.core.Download(ctx, imageName)
 	if err != nil {
-		log.Printf("Error downloading file from Minio: %v", err)
 		http.Error(w, fmt.Sprintf("Error downloading file: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -129,13 +127,16 @@ func (s *PictureServer) MyPictures(w http.ResponseWriter, r *http.Request) {
 
 	imageURLS, err := s.core.GetAllUserPictures(ctx, userID)
 	if err != nil {
-		log.Printf("Error fetching pictures: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
 	}
 
 	jsonResponce, err := json.Marshal(map[string][]string{"result": imageURLS})
 
 	if err != nil {
-		log.Printf("Error marshalling pictures: %v", err)
+		slog.Error("Error retrieving file", "error", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -159,7 +160,6 @@ func (s *PictureServer) DeleteImageHadler(w http.ResponseWriter, r *http.Request
 
 	err := s.core.Delete(ctx, imageName)
 	if err != nil {
-		log.Printf("Error deleting image: %v", err)
 		http.Error(w, fmt.Sprintf("Error deleting image: %v", err), http.StatusInternalServerError)
 		return
 	}

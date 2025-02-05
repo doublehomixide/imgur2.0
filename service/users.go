@@ -3,6 +3,7 @@ package service
 import (
 	"golang.org/x/crypto/bcrypt"
 	"log"
+	"log/slog"
 	"pictureloader/database/postgres"
 	"pictureloader/models"
 )
@@ -24,11 +25,11 @@ func (u *UserService) RegisterUser(user *models.User) error {
 func (u *UserService) LoginUser(userLogin *models.UserLogin) (bool, int) {
 	user, err := u.database.GetUserByUsername(userLogin.Username)
 	if err != nil {
-		log.Printf("Error fetching user: %v", err)
+		slog.Error("Login user (get user by username) error", err)
 		return false, -1
 	}
 	if user == nil {
-		log.Printf("User not found with username: %s", userLogin.Username)
+		slog.Info("LoginUser: User not found", err)
 		return false, -1
 	}
 
