@@ -25,11 +25,11 @@ func (u *UserService) RegisterUser(user *models.User) error {
 func (u *UserService) LoginUser(userLogin *models.UserLogin) (bool, int) {
 	user, err := u.database.GetUserByUsername(userLogin.Username)
 	if err != nil {
-		slog.Error("Login user (get user by username) error", err)
+		slog.Error("Login user (get user by username) error", "error", err)
 		return false, -1
 	}
 	if user == nil {
-		slog.Info("LoginUser: User not found", err)
+		slog.Info("LoginUser: User not found", "error", err)
 		return false, -1
 	}
 

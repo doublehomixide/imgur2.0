@@ -55,7 +55,7 @@ func main() {
 
 	slog.Info("Starting server on port %s", cfg.ServerPort)
 	if err = http.ListenAndServe(cfg.ServerPort, mainRouter); err != nil {
-		slog.Error("PictureServer failed to start: %v", err)
+		slog.Error("PictureServer failed to start", "error", err)
 		os.Exit(1)
 	}
 }
