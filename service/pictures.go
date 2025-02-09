@@ -40,7 +40,7 @@ func (p *PictureLoader) Download(ctx context.Context, imgURL string) (string, st
 	img, err := p.storage.GetFileURL(ctx, imgURL)
 	if err != nil {
 		slog.Error("S3 error downloading file", "error", err)
-		return "", "", fmt.Errorf("failed to get file URL from S3: %w", err)
+		return "", "", fmt.Errorf("failed to get file StorageKey from S3: %w", err)
 	}
 	description, err := p.database.GetImageDescription(imgURL)
 	if err != nil {
