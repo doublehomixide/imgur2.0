@@ -15,6 +15,124 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/albums": {
+            "post": {
+                "description": "Creates an album for an authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Albums"
+                ],
+                "summary": "Create an album",
+                "parameters": [
+                    {
+                        "description": "Album name",
+                        "name": "Name",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.AlbumRegister"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/albums/add-image": {
+            "post": {
+                "description": "Adds an image with imageID to an album with albumID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Albums"
+                ],
+                "summary": "Add an image to an album",
+                "parameters": [
+                    {
+                        "description": "Data for adding image to album",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/rest.Request"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/albums/my": {
+            "get": {
+                "description": "Retrieves all albums of the user by their ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Albums"
+                ],
+                "summary": "Get user albums",
+                "responses": {}
+            }
+        },
+        "/albums/{albumID}": {
+            "get": {
+                "description": "Retrieves all images from the specified album for an authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Albums"
+                ],
+                "summary": "Get images from an album",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Album ID",
+                        "name": "albumID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "delete": {
+                "description": "Deletes the specified album along with its associated images for an authenticated user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Albums"
+                ],
+                "summary": "Delete an album",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Album ID",
+                        "name": "albumID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/pictures/create": {
             "post": {
                 "description": "This endpoint allows a user to upload an image file.",
@@ -79,7 +197,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "URL of the image",
+                        "description": "StorageKey of the image",
                         "name": "imageURL",
                         "in": "path",
                         "required": true
@@ -183,14 +301,22 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.AlbumRegister": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "models.Image": {
             "type": "object",
             "properties": {
-                "album_id": {
-                    "type": "integer"
-                },
                 "description": {
                     "type": "string"
+                },
+                "id": {
+                    "type": "integer"
                 },
                 "url": {
                     "type": "string"
@@ -230,6 +356,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "rest.Request": {
+            "type": "object",
+            "properties": {
+                "album_id": {
+                    "type": "integer"
+                },
+                "image_id": {
                     "type": "string"
                 }
             }
