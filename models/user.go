@@ -1,7 +1,5 @@
 package models
 
-import "io"
-
 type User struct {
 	ID       int    `gorm:"primary_key;autoIncrement" json:"id"`
 	Username string `gorm:"unique" json:"username"`
@@ -19,17 +17,4 @@ type UserRegister struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
-}
-
-type Image struct {
-	URL         string `gorm:"primary_key" json:"url"`
-	UserID      int    `json:"user_id"`
-	Description string `json:"description" gorm:"size:150"`
-}
-
-type ImageUnit struct {
-	User
-	Payload     io.Reader
-	PayloadName string
-	PayloadSize int64
 }

@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"fmt"
 	"gorm.io/gorm"
 	"log"
 	"pictureloader/models"
@@ -15,13 +16,13 @@ func NewImageRepository(db *gorm.DB) *ImageRepository {
 }
 
 func (i *ImageRepository) UploadImage(userID int, URL string, description string) error {
-	imageModel := models.Image{URL: URL, UserID: userID, Description: description}
-	return i.db.Create(imageModel).Error
+	imageModel := models.Image{StorageKey: URL, UserID: userID, Description: description}
+	return i.db.Create(&imageModel).Error
 }
 
 func (i *ImageRepository) GetUserImagesID(userID int) ([]string, error) {
 	var imageIDS []string
-	err := i.db.Model(&models.Image{}).Where("user_id = ?", userID).Pluck("url", &imageIDS).Error
+	err := i.db.Model(&models.Image{}).Where("user_id = ?", userID).Pluck("storage_key", &imageIDS).Error
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +31,7 @@ func (i *ImageRepository) GetUserImagesID(userID int) ([]string, error) {
 
 func (i *ImageRepository) GetImageDescription(imageURL string) (string, error) {
 	var description string
-	err := i.db.Model(&models.Image{}).Where("url = ?", imageURL).Pluck("description", &description).Error
+	err := i.db.Model(&models.Image{}).Where("storage_key = ?", imageURL).Pluck("description", &description).Error
 	if err != nil {
 		return "", err
 	}
@@ -38,10 +39,19 @@ func (i *ImageRepository) GetImageDescription(imageURL string) (string, error) {
 }
 
 func (i *ImageRepository) DeleteImage(imageID string) error {
-	err := i.db.Where("url = ?", imageID).Delete(&models.Image{}).Error
+	err := i.db.Where("storage_key  = ?", imageID).Delete(&models.Image{}).Error
 	if err != nil {
 		log.Println(err)
 		return err
 	}
 	return nil
+}
+
+func (i *ImageRepository) GetImageIDBySK(imageSK string) (int, error) {
+	var imageID int
+	i.db.Model(&models.Image{}).Where("storage_key  = ?", imageSK).Pluck("id", &imageID)
+	if imageID == 0 {
+		return 0, fmt.Errorf("no such image with SK %d", imageSK)
+	}
+	return imageID, nil
 }

@@ -21,7 +21,7 @@ func (m *MinioProvider) UploadFile(ctx context.Context, object models.ImageUnit,
 	return imageName, err
 }
 
-// GetFileURL - Получает URL файла с minio
+// GetFileURL - Получает StorageKey файла с minio
 func (m *MinioProvider) GetFileURL(ctx context.Context, imageURL string) (string, error) {
 	imgLink, err := m.client.PresignedGetObject(ctx, bucketName, imageURL, time.Minute, nil)
 	return imgLink.String(), err

@@ -92,7 +92,7 @@ func (s *PictureServer) UploadImageHandler(w http.ResponseWriter, r *http.Reques
 // @Tags Image
 // @Accept json
 // @Produce  json
-// @Param imageURL path string true "URL of the image"
+// @Param imageURL path string true "StorageKey of the image"
 // @Router /pictures/{imageURL} [get]
 func (s *PictureServer) DownloadFileHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)

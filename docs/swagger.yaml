@@ -1,10 +1,15 @@
 definitions:
+  models.AlbumRegister:
+    properties:
+      name:
+        type: string
+    type: object
   models.Image:
     properties:
-      album_id:
-        type: integer
       description:
         type: string
+      id:
+        type: integer
       url:
         type: string
       user_id:
@@ -32,6 +37,13 @@ definitions:
       username:
         type: string
     type: object
+  rest.Request:
+    properties:
+      album_id:
+        type: integer
+      image_id:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -39,6 +51,88 @@ info:
   title: Imgur 2.0 API
   version: "1.0"
 paths:
+  /albums:
+    post:
+      consumes:
+      - application/json
+      description: Creates an album for an authenticated user
+      parameters:
+      - description: Album name
+        in: body
+        name: Name
+        required: true
+        schema:
+          $ref: '#/definitions/models.AlbumRegister'
+      produces:
+      - application/json
+      responses: {}
+      summary: Create an album
+      tags:
+      - Albums
+  /albums/{albumID}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes the specified album along with its associated images for
+        an authenticated user.
+      parameters:
+      - description: Album ID
+        in: path
+        name: albumID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete an album
+      tags:
+      - Albums
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all images from the specified album for an authenticated
+        user
+      parameters:
+      - description: Album ID
+        in: path
+        name: albumID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Get images from an album
+      tags:
+      - Albums
+  /albums/add-image:
+    post:
+      consumes:
+      - application/json
+      description: Adds an image with imageID to an album with albumID
+      parameters:
+      - description: Data for adding image to album
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rest.Request'
+      produces:
+      - application/json
+      responses: {}
+      summary: Add an image to an album
+      tags:
+      - Albums
+  /albums/my:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all albums of the user by their ID.
+      produces:
+      - application/json
+      responses: {}
+      summary: Get user albums
+      tags:
+      - Albums
   /pictures/{imageURL}:
     delete:
       consumes:
@@ -61,7 +155,7 @@ paths:
       - application/json
       description: This endpoint allows a user to download an image file.
       parameters:
-      - description: URL of the image
+      - description: StorageKey of the image
         in: path
         name: imageURL
         required: true

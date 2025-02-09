@@ -16,4 +16,13 @@ type ImageRepositoryInterface interface {
 	GetUserImagesID(userID int) ([]string, error)
 	GetImageDescription(imageURL string) (string, error)
 	DeleteImage(imageID string) error
+	GetImageIDBySK(imageSK string) (int, error)
+}
+
+type AlbumRepositoryInterface interface {
+	CreateAlbum(album *models.Album) error
+	CreateAlbumAndImage(albumImage *models.AlbumImage) error
+	GetAlbumData(albumID int) (string, map[string]string, error)
+	GetUserAlbumIDs(userID int) ([]int, error)
+	DeleteAlbumByID(albumID int) error
 }
