@@ -9,6 +9,7 @@ import (
 	"testing"
 )
 
+// TestMinioGetFileUrls isn't test, I know it
 func TestMinioGetFileUrls(t *testing.T) {
 	minioprov, err := minio.NewMinioProvider("localhost:9000", "minioadmin", "minioadmin", false)
 	if err != nil {
