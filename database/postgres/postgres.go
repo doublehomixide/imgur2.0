@@ -12,7 +12,7 @@ func NewDataBase(dbPath string) *gorm.DB {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	err = database.AutoMigrate(&models.User{}, &models.Image{})
+	err = database.AutoMigrate(&models.User{}, &models.Image{}, &models.Album{}, &models.AlbumImage{})
 	if err != nil {
 		log.Fatalln(err)
 	}
