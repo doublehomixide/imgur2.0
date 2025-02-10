@@ -101,3 +101,17 @@ func (als *AlbumService) DeleteAlbum(albumID int) error {
 	}
 	return nil
 }
+
+func (als *AlbumService) DeleteImageFromAlbum(albumID int, imageSK string) error {
+	imageID, err := als.imageDatabase.GetImageIDBySK(imageSK)
+	if err != nil {
+		slog.Info("Delete image from album", "error", err)
+		return err
+	}
+	err = als.database.DeleteAlbumImage(albumID, imageID)
+	if err != nil {
+		slog.Error("Delete image from album", "error", err)
+		return err
+	}
+	return nil
+}

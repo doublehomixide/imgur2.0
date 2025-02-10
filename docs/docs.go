@@ -42,33 +42,6 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/albums/add-image": {
-            "post": {
-                "description": "Adds an image with imageID to an album with albumID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Albums"
-                ],
-                "summary": "Add an image to an album",
-                "parameters": [
-                    {
-                        "description": "Data for adding image to album",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/rest.Request"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
         "/albums/my": {
             "get": {
                 "description": "Retrieves all albums of the user by their ID.",
@@ -126,6 +99,68 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "Album ID",
                         "name": "albumID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/albums/{albumID}/{imageSK}": {
+            "post": {
+                "description": "Adds an image with imageID to an album with albumID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Albums"
+                ],
+                "summary": "Add an image to an album",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Album ID",
+                        "name": "albumID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Image Storage Key",
+                        "name": "imageSK",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "delete": {
+                "description": "Deletes an image by its identifier (storage key) from the album with the given AlbumID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Albums"
+                ],
+                "summary": "Removes an image from the specified album.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Album ID",
+                        "name": "albumID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Image Storage Key",
+                        "name": "imageSK",
                         "in": "path",
                         "required": true
                     }
@@ -356,17 +391,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "rest.Request": {
-            "type": "object",
-            "properties": {
-                "album_id": {
-                    "type": "integer"
-                },
-                "image_id": {
                     "type": "string"
                 }
             }

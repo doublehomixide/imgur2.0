@@ -37,13 +37,6 @@ definitions:
       username:
         type: string
     type: object
-  rest.Request:
-    properties:
-      album_id:
-        type: integer
-      image_id:
-        type: string
-    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -104,18 +97,44 @@ paths:
       summary: Get images from an album
       tags:
       - Albums
-  /albums/add-image:
+  /albums/{albumID}/{imageSK}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes an image by its identifier (storage key) from the album
+        with the given AlbumID.
+      parameters:
+      - description: Album ID
+        in: path
+        name: albumID
+        required: true
+        type: integer
+      - description: Image Storage Key
+        in: path
+        name: imageSK
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Removes an image from the specified album.
+      tags:
+      - Albums
     post:
       consumes:
       - application/json
       description: Adds an image with imageID to an album with albumID
       parameters:
-      - description: Data for adding image to album
-        in: body
-        name: request
+      - description: Album ID
+        in: path
+        name: albumID
         required: true
-        schema:
-          $ref: '#/definitions/rest.Request'
+        type: integer
+      - description: Image Storage Key
+        in: path
+        name: imageSK
+        required: true
+        type: string
       produces:
       - application/json
       responses: {}

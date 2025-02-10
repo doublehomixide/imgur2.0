@@ -25,4 +25,5 @@ type AlbumRepositoryInterface interface {
 	GetAlbumData(albumID int) (string, map[string]string, error)
 	GetUserAlbumIDs(userID int) ([]int, error)
 	DeleteAlbumByID(albumID int) error
+	DeleteAlbumImage(albumID int, imageID int) error
 }
