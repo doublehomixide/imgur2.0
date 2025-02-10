@@ -25,8 +25,9 @@ func AlbumRouter(api *mux.Router, server *AlbumServer) {
 	router.HandleFunc("/", server.CreateAlbumHandler).Methods("POST")
 	router.HandleFunc("/my", server.GetMyAlbums).Methods("GET")
 	router.HandleFunc("/{albumID}", server.GetAlbum).Methods("GET")
-	router.HandleFunc("/add-image", server.AddImageToAlbum).Methods("POST")
+	router.HandleFunc("/{albumID}/{imageSK}", server.AddImageToAlbum).Methods("POST")
 	router.HandleFunc("/{albumID}", server.DeleteAlbum).Methods("DELETE")
+	router.HandleFunc("/{albumID}/{imageSK}", server.DeleteAlbumImage).Methods("DELETE")
 	router.Use(jwtUtils.AuthMiddleware)
 }
 
@@ -97,12 +98,14 @@ type Request struct {
 // @Tags Albums
 // @Accept  json
 // @Produce  json
-// @Param request body Request true "Data for adding image to album"
-// @Router /albums/add-image [post]
+// @Param albumID path int true "Album ID"
+// @Param imageSK path string true "Image Storage Key"
+// @Router /albums/{albumID}/{imageSK} [post]
 func (as *AlbumServer) AddImageToAlbum(w http.ResponseWriter, r *http.Request) {
-	var req Request
-	json.NewDecoder(r.Body).Decode(&req)
-	err := as.service.AppendImageToAlbum(req.AlbumID, req.ImageID)
+	albumIDstr := mux.Vars(r)["albumID"]
+	imageSK := mux.Vars(r)["imageSK"]
+	albumID, _ := strconv.Atoi(albumIDstr)
+	err := as.service.AppendImageToAlbum(albumID, imageSK)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
@@ -162,4 +165,29 @@ func (as *AlbumServer) DeleteAlbum(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Add("Content-Type", "application/json")
 	w.Write([]byte(`{"status":"Album deleted"}`))
+}
+
+// DeleteAlbumImage removes an image from an album.
+// @Summary      Removes an image from the specified album.
+// @Description  Deletes an image by its identifier (storage key) from the album with the given AlbumID.
+// @Tags         Albums
+// @Accept       json
+// @Produce      json
+// @Param        albumID path int true "Album ID"
+// @Param        imageSK path string true "Image Storage Key"
+// @Router       /albums/{albumID}/{imageSK} [delete]
+func (as *AlbumServer) DeleteAlbumImage(w http.ResponseWriter, r *http.Request) {
+	albumIDstr := mux.Vars(r)["albumID"]
+	imageSK := mux.Vars(r)["imageSK"]
+	albumID, _ := strconv.Atoi(albumIDstr)
+
+	err := as.service.DeleteImageFromAlbum(albumID, imageSK)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Add("Content-Type", "application/json")
+	w.Write([]byte(`{"status":"Image deleted"}`))
 }

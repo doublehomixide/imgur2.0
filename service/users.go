@@ -42,3 +42,21 @@ func (u *UserService) LoginUser(userLogin *models.UserLogin) (bool, int) {
 
 	return true, user.ID
 }
+
+func (u *UserService) DeleteUserByID(userID int) error {
+	err := u.database.DeleteUserByID(userID)
+	if err != nil {
+		slog.Error("DeleteUserByID error", "error", err)
+		return err
+	}
+	return nil
+}
+
+func (u *UserService) UpdateUsername(userID int, username string) error {
+	err := u.database.ChangeUsernameByID(userID, username)
+	if err != nil {
+		slog.Error("UpdateUsername error", "error", err)
+		return err
+	}
+	return nil
+}

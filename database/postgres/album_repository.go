@@ -47,3 +47,7 @@ func (ar *AlbumRepository) GetUserAlbumIDs(userID int) ([]int, error) {
 func (ar *AlbumRepository) DeleteAlbumByID(albumID int) error {
 	return ar.db.Delete(&models.Album{}, albumID).Error
 }
+
+func (ar *AlbumRepository) DeleteAlbumImage(albumID int, imageID int) error {
+	return ar.db.Delete(&models.AlbumImage{}, "album_id = ? AND image_id = ?", albumID, imageID).Error
+}

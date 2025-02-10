@@ -42,33 +42,6 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/albums/add-image": {
-            "post": {
-                "description": "Adds an image with imageID to an album with albumID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Albums"
-                ],
-                "summary": "Add an image to an album",
-                "parameters": [
-                    {
-                        "description": "Data for adding image to album",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/rest.Request"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
         "/albums/my": {
             "get": {
                 "description": "Retrieves all albums of the user by their ID.",
@@ -126,6 +99,68 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "Album ID",
                         "name": "albumID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/albums/{albumID}/{imageSK}": {
+            "post": {
+                "description": "Adds an image with imageID to an album with albumID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Albums"
+                ],
+                "summary": "Add an image to an album",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Album ID",
+                        "name": "albumID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Image Storage Key",
+                        "name": "imageSK",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "delete": {
+                "description": "Deletes an image by its identifier (storage key) from the album with the given AlbumID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Albums"
+                ],
+                "summary": "Removes an image from the specified album.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Album ID",
+                        "name": "albumID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Image Storage Key",
+                        "name": "imageSK",
                         "in": "path",
                         "required": true
                     }
@@ -272,6 +307,54 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/users/profile": {
+            "delete": {
+                "description": "This endpoint allows an authenticated user to delete their profile permanently.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Delete user profile",
+                "responses": {}
+            }
+        },
+        "/users/profile/username": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "This endpoint allows the user to change their username. The new username is passed in the body of the request.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Change the username of the authenticated user",
+                "parameters": [
+                    {
+                        "description": "New Username",
+                        "name": "username",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/rest.usernameReqChange"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/users/register": {
             "post": {
                 "description": "This endpoint registers a new user, stores the user in the database, and generates a JWT token for the user.",
@@ -301,6 +384,29 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.Album": {
+            "type": "object",
+            "properties": {
+                "album_id": {
+                    "type": "integer"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Image"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/models.User"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.AlbumRegister": {
             "type": "object",
             "properties": {
@@ -329,6 +435,12 @@ const docTemplate = `{
         "models.User": {
             "type": "object",
             "properties": {
+                "albumss": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Album"
+                    }
+                },
                 "email": {
                     "type": "string"
                 },
@@ -360,13 +472,10 @@ const docTemplate = `{
                 }
             }
         },
-        "rest.Request": {
+        "rest.usernameReqChange": {
             "type": "object",
             "properties": {
-                "album_id": {
-                    "type": "integer"
-                },
-                "image_id": {
+                "username": {
                     "type": "string"
                 }
             }
