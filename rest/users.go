@@ -2,6 +2,7 @@ package rest
 
 import (
 	"encoding/json"
+	jwt2 "github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
 	"net/http"
 	"pictureloader/models"
@@ -23,6 +24,12 @@ func UserRouter(api *mux.Router, server *Server) {
 	router.HandleFunc("/register", server.RegisterHandler).Methods("POST")
 	router.HandleFunc("/login", server.LoginUserHandler).Methods("POST")
 	router.HandleFunc("/logout", server.LogoutHandler).Methods("POST")
+
+	jwtutils := jwtutils.UtilsJWT{}
+	subrouter := router.PathPrefix("/profile").Subrouter()
+	subrouter.HandleFunc("", server.DeleteProfile).Methods("DELETE")
+	subrouter.HandleFunc("/username", server.ChangeUsername).Methods("PATCH")
+	subrouter.Use(jwtutils.AuthMiddleware)
 }
 
 // RegisterHandler handles user registration
@@ -132,4 +139,73 @@ func (server *Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message":"Logout successful"}`))
+}
+
+// DeleteProfile deletes the authenticated user's profile
+// @Summary Delete user profile
+// @Description This endpoint allows an authenticated user to delete their profile permanently.
+// @Tags User
+// @Accept json
+// @Produce json
+// @Router /users/profile [delete]
+func (server *Server) DeleteProfile(w http.ResponseWriter, r *http.Request) {
+	claims := r.Context().Value("claims").(jwt2.MapClaims)
+	sub := claims["sub"].(float64)
+	userID := int(sub)
+
+	err := server.core.DeleteUserByID(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     "user-cookie",
+		Value:    "",
+		HttpOnly: true,
+		Secure:   false, // HTTP & HTTPS
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+		MaxAge:   0,
+	})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message":"Delete successful"}`))
+}
+
+type usernameReqChange struct {
+	Username string `json:"username"`
+}
+
+// ChangeUsername allows the user to change their username
+// @Summary Change the username of the authenticated user
+// @Description This endpoint allows the user to change their username. The new username is passed in the body of the request.
+// @Tags User
+// @Accept  json
+// @Produce  json
+// @Param username body usernameReqChange true "New Username"
+// @Security BearerAuth
+// @Router /users/profile/username [patch]
+func (server *Server) ChangeUsername(w http.ResponseWriter, r *http.Request) {
+	claims := r.Context().Value("claims").(jwt2.MapClaims)
+	sub := claims["sub"].(float64)
+	userID := int(sub)
+
+	var request usernameReqChange
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"error": "Invalid JSON body"}`))
+		return
+	}
+
+	err := server.core.UpdateUsername(userID, request.Username)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message":"Change successful"}`))
 }

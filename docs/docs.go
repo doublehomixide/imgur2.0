@@ -307,6 +307,54 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/users/profile": {
+            "delete": {
+                "description": "This endpoint allows an authenticated user to delete their profile permanently.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Delete user profile",
+                "responses": {}
+            }
+        },
+        "/users/profile/username": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "This endpoint allows the user to change their username. The new username is passed in the body of the request.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Change the username of the authenticated user",
+                "parameters": [
+                    {
+                        "description": "New Username",
+                        "name": "username",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/rest.usernameReqChange"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/users/register": {
             "post": {
                 "description": "This endpoint registers a new user, stores the user in the database, and generates a JWT token for the user.",
@@ -336,6 +384,29 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.Album": {
+            "type": "object",
+            "properties": {
+                "album_id": {
+                    "type": "integer"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Image"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/models.User"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.AlbumRegister": {
             "type": "object",
             "properties": {
@@ -364,6 +435,12 @@ const docTemplate = `{
         "models.User": {
             "type": "object",
             "properties": {
+                "albumss": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Album"
+                    }
+                },
                 "email": {
                     "type": "string"
                 },
@@ -390,6 +467,14 @@ const docTemplate = `{
                 "password": {
                     "type": "string"
                 },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "rest.usernameReqChange": {
+            "type": "object",
+            "properties": {
                 "username": {
                     "type": "string"
                 }

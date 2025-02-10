@@ -37,3 +37,8 @@ func (u *UserRepository) GetUserByUsername(username string) (*models.User, error
 	}
 	return &user, nil
 }
+
+func (u *UserRepository) ChangeUsernameByID(userID int, newUsername string) error {
+	err := u.db.Model(&models.User{}).Where("id = ?", userID).Update("username", newUsername).Error
+	return err
+}

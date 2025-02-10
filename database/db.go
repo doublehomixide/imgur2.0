@@ -9,6 +9,7 @@ type UserRepositoryInterface interface {
 	GetUserByID(ID int) (*models.User, error)
 	DeleteUserByID(ID int) error
 	GetUserByUsername(username string) (*models.User, error)
+	ChangeUsernameByID(userID int, newUsername string) error
 }
 
 type ImageRepositoryInterface interface {
