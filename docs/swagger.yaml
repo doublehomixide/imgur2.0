@@ -1,56 +1,20 @@
 definitions:
-  models.Album:
-    properties:
-      album_id:
-        type: integer
-      images:
-        items:
-          $ref: '#/definitions/models.Image'
-        type: array
-      name:
-        type: string
-      user:
-        $ref: '#/definitions/models.User'
-      user_id:
-        type: integer
-    type: object
   models.AlbumRegister:
     properties:
       name:
         type: string
     type: object
-  models.Image:
+  models.UserLogin:
     properties:
-      description:
-        type: string
-      id:
-        type: integer
-      url:
-        type: string
-      user_id:
-        type: integer
-    type: object
-  models.User:
-    properties:
-      albumss:
-        items:
-          $ref: '#/definitions/models.Album'
-        type: array
-      email:
-        type: string
-      id:
-        type: integer
-      images:
-        items:
-          $ref: '#/definitions/models.Image'
-        type: array
       password:
         type: string
       username:
         type: string
     type: object
-  models.UserLogin:
+  models.UserRegister:
     properties:
+      email:
+        type: string
       password:
         type: string
       username:
@@ -319,7 +283,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/models.User'
+          $ref: '#/definitions/models.UserRegister'
       produces:
       - application/json
       responses: {}

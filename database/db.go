@@ -18,6 +18,7 @@ type ImageRepositoryInterface interface {
 	GetImageDescription(imageURL string) (string, error)
 	DeleteImage(imageID string) error
 	GetImageIDBySK(imageSK string) (int, error)
+	IsOwnerOfPicture(userID int, imageSK string) error
 }
 
 type AlbumRepositoryInterface interface {
@@ -27,4 +28,5 @@ type AlbumRepositoryInterface interface {
 	GetUserAlbumIDs(userID int) ([]int, error)
 	DeleteAlbumByID(albumID int) error
 	DeleteAlbumImage(albumID int, imageID int) error
+	IsOwnerOfAlbum(userID int, albumID int) error
 }

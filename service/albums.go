@@ -75,7 +75,12 @@ func (als *AlbumService) GetUserAlbums(userID int) (map[int]models.AlbumUnit, er
 	return result, nil
 }
 
-func (als *AlbumService) AppendImageToAlbum(albumID int, imageSK string) error {
+func (als *AlbumService) AppendImageToAlbum(albumID int, imageSK string, userID int) error {
+	err := als.database.IsOwnerOfAlbum(userID, albumID)
+	if err != nil {
+		slog.Error("Database delete error", "error", err)
+		return err
+	}
 
 	imageID, err := als.imageDatabase.GetImageIDBySK(imageSK)
 	if err != nil {
@@ -93,8 +98,14 @@ func (als *AlbumService) AppendImageToAlbum(albumID int, imageSK string) error {
 	return nil
 }
 
-func (als *AlbumService) DeleteAlbum(albumID int) error {
-	err := als.database.DeleteAlbumByID(albumID)
+func (als *AlbumService) DeleteAlbum(albumID int, userID int) error {
+	err := als.database.IsOwnerOfAlbum(userID, albumID)
+	if err != nil {
+		slog.Error("Database delete error", "error", err)
+		return err
+	}
+
+	err = als.database.DeleteAlbumByID(albumID)
 	if err != nil {
 		slog.Error("Delete album", "error", err)
 		return err
@@ -102,7 +113,13 @@ func (als *AlbumService) DeleteAlbum(albumID int) error {
 	return nil
 }
 
-func (als *AlbumService) DeleteImageFromAlbum(albumID int, imageSK string) error {
+func (als *AlbumService) DeleteImageFromAlbum(albumID int, imageSK string, userID int) error {
+	err := als.database.IsOwnerOfAlbum(userID, albumID)
+	if err != nil {
+		slog.Error("Database delete error", "error", err)
+		return err
+	}
+
 	imageID, err := als.imageDatabase.GetImageIDBySK(imageSK)
 	if err != nil {
 		slog.Info("Delete image from album", "error", err)

@@ -22,7 +22,7 @@ func NewAlbumServer(service service.AlbumService) *AlbumServer {
 func AlbumRouter(api *mux.Router, server *AlbumServer) {
 	jwtUtils := jwtutils.UtilsJWT{}
 	router := api.PathPrefix("/albums").Subrouter()
-	router.HandleFunc("/", server.CreateAlbumHandler).Methods("POST")
+	router.HandleFunc("", server.CreateAlbumHandler).Methods("POST")
 	router.HandleFunc("/my", server.GetMyAlbums).Methods("GET")
 	router.HandleFunc("/{albumID}", server.GetAlbum).Methods("GET")
 	router.HandleFunc("/{albumID}/{imageSK}", server.AddImageToAlbum).Methods("POST")
@@ -105,7 +105,12 @@ func (as *AlbumServer) AddImageToAlbum(w http.ResponseWriter, r *http.Request) {
 	albumIDstr := mux.Vars(r)["albumID"]
 	imageSK := mux.Vars(r)["imageSK"]
 	albumID, _ := strconv.Atoi(albumIDstr)
-	err := as.service.AppendImageToAlbum(albumID, imageSK)
+
+	claims := r.Context().Value("claims").(jwt2.MapClaims)
+	sub := claims["sub"].(float64)
+	userID := int(sub)
+
+	err := as.service.AppendImageToAlbum(albumID, imageSK, userID)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
@@ -156,7 +161,11 @@ func (as *AlbumServer) DeleteAlbum(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	err = as.service.DeleteAlbum(albumID)
+	claims := r.Context().Value("claims").(jwt2.MapClaims)
+	sub := claims["sub"].(float64)
+	userID := int(sub)
+
+	err = as.service.DeleteAlbum(albumID, userID)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
@@ -181,7 +190,11 @@ func (as *AlbumServer) DeleteAlbumImage(w http.ResponseWriter, r *http.Request) 
 	imageSK := mux.Vars(r)["imageSK"]
 	albumID, _ := strconv.Atoi(albumIDstr)
 
-	err := as.service.DeleteImageFromAlbum(albumID, imageSK)
+	claims := r.Context().Value("claims").(jwt2.MapClaims)
+	sub := claims["sub"].(float64)
+	userID := int(sub)
+
+	err := as.service.DeleteImageFromAlbum(albumID, imageSK, userID)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))

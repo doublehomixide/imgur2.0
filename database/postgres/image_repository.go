@@ -55,3 +55,13 @@ func (i *ImageRepository) GetImageIDBySK(imageSK string) (int, error) {
 	}
 	return imageID, nil
 }
+
+// IsOwnerOfPicture userID, imageSK -> true if userID == imageSK.userID else false
+func (i *ImageRepository) IsOwnerOfPicture(userID int, imageSK string) error {
+	var trueUserID int
+	i.db.Model(&models.Image{}).Where("storage_key = ?", imageSK).Pluck("user_id", &trueUserID)
+	if userID != trueUserID {
+		return fmt.Errorf("user is not owner of this picture %s", imageSK)
+	}
+	return nil
+}

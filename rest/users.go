@@ -38,7 +38,7 @@ func UserRouter(api *mux.Router, server *Server) {
 // @Tags User
 // @Accept  json
 // @Produce  json
-// @Param user body models.User true "User data for registration"
+// @Param user body models.UserRegister true "User data for registration"
 // @Router /users/register [post]
 func (server *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	//получение модели и регистрация ее в бд

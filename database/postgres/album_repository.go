@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"fmt"
 	"gorm.io/gorm"
 	"pictureloader/models"
 )
@@ -50,4 +51,13 @@ func (ar *AlbumRepository) DeleteAlbumByID(albumID int) error {
 
 func (ar *AlbumRepository) DeleteAlbumImage(albumID int, imageID int) error {
 	return ar.db.Delete(&models.AlbumImage{}, "album_id = ? AND image_id = ?", albumID, imageID).Error
+}
+
+func (ar *AlbumRepository) IsOwnerOfAlbum(userID int, albumID int) error {
+	var trueUserID int
+	ar.db.Model(&models.Album{}).Where("id = ?", albumID).Pluck("user_id", &trueUserID)
+	if userID != trueUserID {
+		return fmt.Errorf("user is not owner of this album %d", albumID)
+	}
+	return nil
 }

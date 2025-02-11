@@ -375,7 +375,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/models.UserRegister"
                         }
                     }
                 ],
@@ -384,29 +384,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "models.Album": {
-            "type": "object",
-            "properties": {
-                "album_id": {
-                    "type": "integer"
-                },
-                "images": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Image"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/models.User"
-                },
-                "user_id": {
-                    "type": "integer"
-                }
-            }
-        },
         "models.AlbumRegister": {
             "type": "object",
             "properties": {
@@ -415,44 +392,9 @@ const docTemplate = `{
                 }
             }
         },
-        "models.Image": {
+        "models.UserLogin": {
             "type": "object",
             "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "url": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.User": {
-            "type": "object",
-            "properties": {
-                "albumss": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Album"
-                    }
-                },
-                "email": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "images": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Image"
-                    }
-                },
                 "password": {
                     "type": "string"
                 },
@@ -461,9 +403,12 @@ const docTemplate = `{
                 }
             }
         },
-        "models.UserLogin": {
+        "models.UserRegister": {
             "type": "object",
             "properties": {
+                "email": {
+                    "type": "string"
+                },
                 "password": {
                     "type": "string"
                 },

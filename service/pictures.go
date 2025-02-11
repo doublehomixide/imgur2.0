@@ -64,8 +64,14 @@ func (p *PictureLoader) GetAllUserPictures(ctx context.Context, userID int) ([]s
 	return imageURLS, err
 }
 
-func (p *PictureLoader) Delete(ctx context.Context, imgName string) error {
-	err := p.storage.DeleteFileByURL(ctx, imgName)
+func (p *PictureLoader) Delete(ctx context.Context, userID int, imgName string) error {
+	err := p.database.IsOwnerOfPicture(userID, imgName)
+	if err != nil {
+		slog.Error("Database delete error", "error", err)
+		return err
+	}
+
+	err = p.storage.DeleteFileByURL(ctx, imgName)
 	if err != nil {
 		slog.Info("Storage delete error", "error", err)
 		return err

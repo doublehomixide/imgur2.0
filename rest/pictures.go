@@ -31,10 +31,10 @@ func PictureRouter(api *mux.Router, server *PictureServer) {
 	privateRouter := router.PathPrefix("").Subrouter()
 	privateRouter.HandleFunc("/create", server.UploadImageHandler).Methods("POST")
 	privateRouter.HandleFunc("/my", server.MyPictures).Methods("GET")
+	privateRouter.HandleFunc("/{imageURL}", server.DeleteImageHadler).Methods("DELETE")
 	privateRouter.Use(jwtUtils.AuthMiddleware)
 
 	router.HandleFunc("/{imageURL}", server.DownloadFileHandler).Methods("GET")
-	router.HandleFunc("/{imageURL}", server.DeleteImageHadler).Methods("DELETE")
 }
 
 // UploadImageHandler handles image upload
@@ -152,13 +152,17 @@ func (s *PictureServer) MyPictures(w http.ResponseWriter, r *http.Request) {
 // @Param imageURL path string true "Image url"
 // @Router /pictures/{imageURL} [delete]
 func (s *PictureServer) DeleteImageHadler(w http.ResponseWriter, r *http.Request) {
+	claims := r.Context().Value("claims").(jwt2.MapClaims)
+	sub := claims["sub"].(float64)
+	userID := int(sub)
+
 	vars := mux.Vars(r)
 	imageName := vars["imageURL"]
 
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 
-	err := s.core.Delete(ctx, imageName)
+	err := s.core.Delete(ctx, userID, imageName)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error deleting image: %v", err), http.StatusInternalServerError)
 		return
