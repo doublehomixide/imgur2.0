@@ -2,28 +2,37 @@ package service
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"github.com/redis/go-redis/v9"
 	"log/slog"
+	cache "pictureloader/caching"
 	db "pictureloader/database"
 	"pictureloader/image_storage"
 	"pictureloader/models"
+	"strconv"
+	"time"
 )
 
 type AlbumService struct {
 	database      db.AlbumRepositoryInterface
 	storage       image_storage.ImageStorage
 	imageDatabase db.ImageRepositoryInterface
+	cache         cache.Cacher
 }
 
-func NewAlbumService(database db.AlbumRepositoryInterface, storage image_storage.ImageStorage, imageDatabase db.ImageRepositoryInterface) *AlbumService {
+func NewAlbumService(database db.AlbumRepositoryInterface, storage image_storage.ImageStorage,
+	imageDatabase db.ImageRepositoryInterface, cacher cache.Cacher) *AlbumService {
 	return &AlbumService{
 		database:      database,
 		storage:       storage,
 		imageDatabase: imageDatabase,
+		cache:         cacher,
 	}
 }
 
-func (als *AlbumService) CreateAlbum(album *models.Album) error {
-	err := als.database.CreateAlbum(album)
+func (als *AlbumService) CreateAlbum(ctx context.Context, album *models.Album) error {
+	err := als.database.CreateAlbum(ctx, album)
 	if err != nil {
 		slog.Error("Create album", "error", err)
 		return err
@@ -31,8 +40,21 @@ func (als *AlbumService) CreateAlbum(album *models.Album) error {
 	return nil
 }
 
-func (als *AlbumService) GetAlbum(albumID int) (models.AlbumUnit, error) {
-	albumName, images, err := als.database.GetAlbumData(albumID)
+func (als *AlbumService) GetAlbum(ctx context.Context, albumID int) (models.AlbumUnit, error) {
+
+	cachedResult, err := als.cache.Get(ctx, strconv.Itoa(albumID))
+	if err != nil && !errors.Is(err, redis.Nil) {
+		slog.Error("Get album", "error", err)
+		return models.AlbumUnit{}, err
+	}
+	if cachedResult != "" {
+		slog.Info("Get album from cache", "albumID", albumID)
+		var album models.AlbumUnit
+		json.Unmarshal([]byte(cachedResult), &album)
+		return album, nil
+	}
+
+	albumName, images, err := als.database.GetAlbumData(ctx, albumID)
 	if err != nil {
 		slog.Error("Get images from album", "error", err)
 		return models.AlbumUnit{}, err
@@ -53,12 +75,20 @@ func (als *AlbumService) GetAlbum(albumID int) (models.AlbumUnit, error) {
 		Images: updatedImages,
 	}
 
+	resultJSON, _ := json.Marshal(result)
+
+	err = als.cache.Set(ctx, strconv.Itoa(albumID), string(resultJSON), time.Hour*5)
+	if err != nil {
+		slog.Error("Set album", "error", err)
+		return models.AlbumUnit{}, err
+	}
+
 	return result, nil
 }
 
 // GetUserAlbums userID -> hashmap where key is album ID, value is models.AlbumUnit
-func (als *AlbumService) GetUserAlbums(userID int) (map[int]models.AlbumUnit, error) {
-	albumIDs, err := als.database.GetUserAlbumIDs(userID)
+func (als *AlbumService) GetUserAlbums(ctx context.Context, userID int) (map[int]models.AlbumUnit, error) {
+	albumIDs, err := als.database.GetUserAlbumIDs(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +96,7 @@ func (als *AlbumService) GetUserAlbums(userID int) (map[int]models.AlbumUnit, er
 	result := make(map[int]models.AlbumUnit)
 
 	for _, albumID := range albumIDs {
-		album, err := als.GetAlbum(albumID)
+		album, err := als.GetAlbum(ctx, albumID)
 		if err != nil {
 			continue
 		}
@@ -75,14 +105,14 @@ func (als *AlbumService) GetUserAlbums(userID int) (map[int]models.AlbumUnit, er
 	return result, nil
 }
 
-func (als *AlbumService) AppendImageToAlbum(albumID int, imageSK string, userID int) error {
-	err := als.database.IsOwnerOfAlbum(userID, albumID)
+func (als *AlbumService) AppendImageToAlbum(ctx context.Context, albumID int, imageSK string, userID int) error {
+	err := als.database.IsOwnerOfAlbum(ctx, userID, albumID)
 	if err != nil {
 		slog.Error("Database delete error", "error", err)
 		return err
 	}
 
-	imageID, err := als.imageDatabase.GetImageIDBySK(imageSK)
+	imageID, err := als.imageDatabase.GetImageIDBySK(ctx, imageSK)
 	if err != nil {
 		slog.Info("Add image to album", "error", err)
 		return err
@@ -90,7 +120,7 @@ func (als *AlbumService) AppendImageToAlbum(albumID int, imageSK string, userID 
 
 	albumImageModel := &models.AlbumImage{AlbumID: albumID, ImageID: imageID}
 
-	err = als.database.CreateAlbumAndImage(albumImageModel)
+	err = als.database.CreateAlbumAndImage(ctx, albumImageModel)
 	if err != nil {
 		slog.Error("Add image to album", "error", err)
 		return err
@@ -98,14 +128,14 @@ func (als *AlbumService) AppendImageToAlbum(albumID int, imageSK string, userID 
 	return nil
 }
 
-func (als *AlbumService) DeleteAlbum(albumID int, userID int) error {
-	err := als.database.IsOwnerOfAlbum(userID, albumID)
+func (als *AlbumService) DeleteAlbum(ctx context.Context, albumID int, userID int) error {
+	err := als.database.IsOwnerOfAlbum(ctx, userID, albumID)
 	if err != nil {
 		slog.Error("Database delete error", "error", err)
 		return err
 	}
 
-	err = als.database.DeleteAlbumByID(albumID)
+	err = als.database.DeleteAlbumByID(ctx, albumID)
 	if err != nil {
 		slog.Error("Delete album", "error", err)
 		return err
@@ -113,19 +143,19 @@ func (als *AlbumService) DeleteAlbum(albumID int, userID int) error {
 	return nil
 }
 
-func (als *AlbumService) DeleteImageFromAlbum(albumID int, imageSK string, userID int) error {
-	err := als.database.IsOwnerOfAlbum(userID, albumID)
+func (als *AlbumService) DeleteImageFromAlbum(ctx context.Context, albumID int, imageSK string, userID int) error {
+	err := als.database.IsOwnerOfAlbum(ctx, userID, albumID)
 	if err != nil {
 		slog.Error("Database delete error", "error", err)
 		return err
 	}
 
-	imageID, err := als.imageDatabase.GetImageIDBySK(imageSK)
+	imageID, err := als.imageDatabase.GetImageIDBySK(ctx, imageSK)
 	if err != nil {
 		slog.Info("Delete image from album", "error", err)
 		return err
 	}
-	err = als.database.DeleteAlbumImage(albumID, imageID)
+	err = als.database.DeleteAlbumImage(ctx, albumID, imageID)
 	if err != nil {
 		slog.Error("Delete image from album", "error", err)
 		return err
