@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"pictureloader/caching/redis"
 	config "pictureloader/cfg"
 	"pictureloader/database/postgres"
 	_ "pictureloader/docs"
@@ -31,6 +32,7 @@ func main() {
 	slog.Info("Minio provider initialized")
 	psqlDB := postgres.NewDataBase(cfg.PsqlDBPath)
 	slog.Info("Postgres DB initialized")
+	cache := redis.NewRedisClient()
 
 	//database and service related to the database init
 	userRepo := postgres.NewUserRepository(psqlDB)
@@ -40,7 +42,7 @@ func main() {
 
 	imageService := service.NewPictureLoader(minioprov, imageRepo)
 	userService := service.NewUserService(*userRepo)
-	albumService := service.NewAlbumService(albumRepo, minioprov, imageRepo)
+	albumService := service.NewAlbumService(albumRepo, minioprov, imageRepo, cache)
 	slog.Info("Image and User services initialized")
 
 	picturesServer := rest.PictureNewServer(imageService)

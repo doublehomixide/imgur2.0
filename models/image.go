@@ -4,8 +4,8 @@ import "io"
 
 type Image struct {
 	ID          int    `gorm:"primary_key" json:"id"`
-	StorageKey  string `json:"url"`
-	UserID      int    `json:"user_id"`
+	StorageKey  string `json:"storage_key" gorm:"not null"`
+	UserID      int    `json:"user_id" gorm:"not null"`
 	Description string `json:"description" gorm:"size:150"`
 }
 

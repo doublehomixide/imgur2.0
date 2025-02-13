@@ -3,7 +3,7 @@ package models
 type Album struct {
 	ID     int     `gorm:"primaryKey;autoIncrement" json:"album_id"`
 	Name   string  `gorm:"not null" json:"name"`
-	UserID int     `json:"user_id"`
+	UserID int     `json:"user_id" gorm:"not null"`
 	User   User    `gorm:"foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE"`
 	Images []Image `gorm:"many2many:album_images"`
 }

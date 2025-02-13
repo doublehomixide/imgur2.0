@@ -23,7 +23,7 @@ func (m *MinioProvider) UploadFile(ctx context.Context, object models.ImageUnit,
 
 // GetFileURL - Получает StorageKey файла с minio
 func (m *MinioProvider) GetFileURL(ctx context.Context, imageURL string) (string, error) {
-	imgLink, err := m.client.PresignedGetObject(ctx, bucketName, imageURL, time.Minute, nil)
+	imgLink, err := m.client.PresignedGetObject(ctx, bucketName, imageURL, time.Hour*5, nil)
 	return imgLink.String(), err
 }
 
