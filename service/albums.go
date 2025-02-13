@@ -63,7 +63,7 @@ func (als *AlbumService) GetAlbum(ctx context.Context, albumID int) (models.Albu
 	updatedImages := make(map[string]string)
 
 	for key, value := range images {
-		presignedURL, err := als.storage.GetFileURL(context.Background(), key)
+		presignedURL, err := als.storage.GetFileURL(ctx, key)
 		if err != nil {
 			continue
 		}
@@ -88,6 +88,18 @@ func (als *AlbumService) GetAlbum(ctx context.Context, albumID int) (models.Albu
 
 // GetUserAlbums userID -> hashmap where key is album ID, value is models.AlbumUnit
 func (als *AlbumService) GetUserAlbums(ctx context.Context, userID int) (map[int]models.AlbumUnit, error) {
+	cachedResult, err := als.cache.Get(ctx, strconv.Itoa(userID)+"_albums")
+	if err != nil && !errors.Is(err, redis.Nil) {
+		slog.Error("Get albums", "error", err)
+		return map[int]models.AlbumUnit{}, err
+	}
+	if cachedResult != "" {
+		slog.Info("Get user albums from cache", "userID", userID)
+		var userAlbums map[int]models.AlbumUnit
+		json.Unmarshal([]byte(cachedResult), &userAlbums)
+		return userAlbums, nil
+	}
+
 	albumIDs, err := als.database.GetUserAlbumIDs(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -102,6 +114,15 @@ func (als *AlbumService) GetUserAlbums(ctx context.Context, userID int) (map[int
 		}
 		result[albumID] = album
 	}
+
+	resultJSON, _ := json.Marshal(result)
+
+	err = als.cache.Set(ctx, strconv.Itoa(userID)+"_albums", string(resultJSON), time.Hour*5)
+	if err != nil {
+		slog.Error("Set album", "error", err)
+		return map[int]models.AlbumUnit{}, err
+	}
+
 	return result, nil
 }
 
@@ -125,6 +146,18 @@ func (als *AlbumService) AppendImageToAlbum(ctx context.Context, albumID int, im
 		slog.Error("Add image to album", "error", err)
 		return err
 	}
+
+	err = als.cache.Delete(ctx, strconv.Itoa(albumID))
+	if err != nil {
+		slog.Error("Delete album", "error", err)
+		return err
+	}
+	err = als.cache.Delete(ctx, strconv.Itoa(userID)+"_albums")
+	if err != nil {
+		slog.Error("Delete user albums", "error", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -140,6 +173,18 @@ func (als *AlbumService) DeleteAlbum(ctx context.Context, albumID int, userID in
 		slog.Error("Delete album", "error", err)
 		return err
 	}
+
+	err = als.cache.Delete(ctx, strconv.Itoa(albumID))
+	if err != nil {
+		slog.Error("Delete album", "error", err)
+		return err
+	}
+	err = als.cache.Delete(ctx, strconv.Itoa(userID)+"_albums")
+	if err != nil {
+		slog.Error("Delete user albums", "error", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -160,5 +205,17 @@ func (als *AlbumService) DeleteImageFromAlbum(ctx context.Context, albumID int, 
 		slog.Error("Delete image from album", "error", err)
 		return err
 	}
+
+	err = als.cache.Delete(ctx, strconv.Itoa(albumID))
+	if err != nil {
+		slog.Error("Delete album", "error", err)
+		return err
+	}
+	err = als.cache.Delete(ctx, strconv.Itoa(userID)+"_albums")
+	if err != nil {
+		slog.Error("Delete user albums", "error", err)
+		return err
+	}
+
 	return nil
 }
