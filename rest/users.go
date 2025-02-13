@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"context"
 	"encoding/json"
 	jwt2 "github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
@@ -49,7 +50,11 @@ func (server *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Ошибка обработки JSON", http.StatusBadRequest)
 		return
 	}
-	err = server.core.RegisterUser(&user)
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	err = server.core.RegisterUser(ctx, &user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -93,7 +98,10 @@ func (server *Server) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isCorrect, userID := server.core.LoginUser(&userLogin)
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	isCorrect, userID := server.core.LoginUser(ctx, &userLogin)
 
 	if !isCorrect {
 		w.WriteHeader(http.StatusBadRequest)
@@ -153,7 +161,10 @@ func (server *Server) DeleteProfile(w http.ResponseWriter, r *http.Request) {
 	sub := claims["sub"].(float64)
 	userID := int(sub)
 
-	err := server.core.DeleteUserByID(userID)
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	err := server.core.DeleteUserByID(ctx, userID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -199,7 +210,10 @@ func (server *Server) ChangeUsername(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := server.core.UpdateUsername(userID, request.Username)
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	err := server.core.UpdateUsername(ctx, userID, request.Username)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))

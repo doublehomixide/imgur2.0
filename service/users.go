@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"log/slog"
@@ -16,14 +17,14 @@ func NewUserService(database postgres.UserRepository) *UserService {
 	return &UserService{database}
 }
 
-func (u *UserService) RegisterUser(user *models.User) error {
+func (u *UserService) RegisterUser(ctx context.Context, user *models.User) error {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	user.Password = string(hashedPassword)
-	return u.database.CreateNewUser(user)
+	return u.database.CreateNewUser(ctx, user)
 }
 
-func (u *UserService) LoginUser(userLogin *models.UserLogin) (bool, int) {
-	user, err := u.database.GetUserByUsername(userLogin.Username)
+func (u *UserService) LoginUser(ctx context.Context, userLogin *models.UserLogin) (bool, int) {
+	user, err := u.database.GetUserByUsername(ctx, userLogin.Username)
 	if err != nil {
 		slog.Error("Login user (get user by username) error", "error", err)
 		return false, -1
@@ -43,8 +44,8 @@ func (u *UserService) LoginUser(userLogin *models.UserLogin) (bool, int) {
 	return true, user.ID
 }
 
-func (u *UserService) DeleteUserByID(userID int) error {
-	err := u.database.DeleteUserByID(userID)
+func (u *UserService) DeleteUserByID(ctx context.Context, userID int) error {
+	err := u.database.DeleteUserByID(ctx, userID)
 	if err != nil {
 		slog.Error("DeleteUserByID error", "error", err)
 		return err
@@ -52,8 +53,8 @@ func (u *UserService) DeleteUserByID(userID int) error {
 	return nil
 }
 
-func (u *UserService) UpdateUsername(userID int, username string) error {
-	err := u.database.ChangeUsernameByID(userID, username)
+func (u *UserService) UpdateUsername(ctx context.Context, userID int, username string) error {
+	err := u.database.ChangeUsernameByID(ctx, userID, username)
 	if err != nil {
 		slog.Error("UpdateUsername error", "error", err)
 		return err

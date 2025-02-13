@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"context"
 	"encoding/json"
 	jwt2 "github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
@@ -9,6 +10,7 @@ import (
 	"pictureloader/safety/jwtutils"
 	"pictureloader/service"
 	"strconv"
+	"time"
 )
 
 type AlbumServer struct {
@@ -53,7 +55,10 @@ func (as *AlbumServer) CreateAlbumHandler(w http.ResponseWriter, r *http.Request
 	}
 	album.UserID = userID
 
-	err = as.service.CreateAlbum(&album)
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	err = as.service.CreateAlbum(ctx, &album)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
@@ -75,7 +80,11 @@ func (as *AlbumServer) CreateAlbumHandler(w http.ResponseWriter, r *http.Request
 func (as *AlbumServer) GetAlbum(w http.ResponseWriter, r *http.Request) {
 	albumIDstr := mux.Vars(r)["albumID"]
 	albumID, err := strconv.Atoi(albumIDstr)
-	result, err := as.service.GetAlbum(albumID)
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	result, err := as.service.GetAlbum(ctx, albumID)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
@@ -84,6 +93,7 @@ func (as *AlbumServer) GetAlbum(w http.ResponseWriter, r *http.Request) {
 
 	encoder := json.NewEncoder(w)
 	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "  ")
 	encoder.Encode(result)
 }
 
@@ -110,7 +120,10 @@ func (as *AlbumServer) AddImageToAlbum(w http.ResponseWriter, r *http.Request) {
 	sub := claims["sub"].(float64)
 	userID := int(sub)
 
-	err := as.service.AppendImageToAlbum(albumID, imageSK, userID)
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	err := as.service.AppendImageToAlbum(ctx, albumID, imageSK, userID)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
@@ -133,7 +146,10 @@ func (as *AlbumServer) GetMyAlbums(w http.ResponseWriter, r *http.Request) {
 	sub := claims["sub"].(float64)
 	userID := int(sub)
 
-	result, err := as.service.GetUserAlbums(userID)
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	result, err := as.service.GetUserAlbums(ctx, userID)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
@@ -142,6 +158,7 @@ func (as *AlbumServer) GetMyAlbums(w http.ResponseWriter, r *http.Request) {
 
 	encoder := json.NewEncoder(w)
 	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "  ")
 	encoder.Encode(result)
 }
 
@@ -165,7 +182,10 @@ func (as *AlbumServer) DeleteAlbum(w http.ResponseWriter, r *http.Request) {
 	sub := claims["sub"].(float64)
 	userID := int(sub)
 
-	err = as.service.DeleteAlbum(albumID, userID)
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	err = as.service.DeleteAlbum(ctx, albumID, userID)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
@@ -194,7 +214,10 @@ func (as *AlbumServer) DeleteAlbumImage(w http.ResponseWriter, r *http.Request) 
 	sub := claims["sub"].(float64)
 	userID := int(sub)
 
-	err := as.service.DeleteImageFromAlbum(albumID, imageSK, userID)
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	err := as.service.DeleteImageFromAlbum(ctx, albumID, imageSK, userID)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
