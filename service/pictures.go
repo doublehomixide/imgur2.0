@@ -28,7 +28,7 @@ func (p *PictureLoader) Upload(ctx context.Context, img models.ImageUnit, userID
 		slog.Error("S3 Upload Error", "error", err)
 		return "", fmt.Errorf("failed to upload file to S3: %w", err)
 	}
-	err = p.database.UploadImage(userID, url, description)
+	err = p.database.UploadImage(ctx, userID, url, description)
 	if err != nil {
 		slog.Error("Database upload error", "error", err)
 		return "", fmt.Errorf("failed to upload image to database: %w", err)
@@ -42,7 +42,7 @@ func (p *PictureLoader) Download(ctx context.Context, imgURL string) (string, st
 		slog.Error("S3 error downloading file", "error", err)
 		return "", "", fmt.Errorf("failed to get file StorageKey from S3: %w", err)
 	}
-	description, err := p.database.GetImageDescription(imgURL)
+	description, err := p.database.GetImageDescription(ctx, imgURL)
 	if err != nil {
 		slog.Error("Database download description error", "error", err)
 		return "", "", fmt.Errorf("failed to get image description: %w", err)
@@ -51,7 +51,7 @@ func (p *PictureLoader) Download(ctx context.Context, imgURL string) (string, st
 }
 
 func (p *PictureLoader) GetAllUserPictures(ctx context.Context, userID int) ([]string, error) {
-	imageIDS, err := p.database.GetUserImagesID(userID)
+	imageIDS, err := p.database.GetUserImagesID(ctx, userID)
 	if err != nil {
 		slog.Error("Database get user images id error", "error", err)
 		return nil, err
@@ -65,7 +65,7 @@ func (p *PictureLoader) GetAllUserPictures(ctx context.Context, userID int) ([]s
 }
 
 func (p *PictureLoader) Delete(ctx context.Context, userID int, imgName string) error {
-	err := p.database.IsOwnerOfPicture(userID, imgName)
+	err := p.database.IsOwnerOfPicture(ctx, userID, imgName)
 	if err != nil {
 		slog.Error("Database delete error", "error", err)
 		return err
@@ -76,7 +76,7 @@ func (p *PictureLoader) Delete(ctx context.Context, userID int, imgName string) 
 		slog.Info("Storage delete error", "error", err)
 		return err
 	}
-	err = p.database.DeleteImage(imgName)
+	err = p.database.DeleteImage(ctx, imgName)
 	if err != nil {
 		slog.Info("Database delete error", "error", err)
 		return err
