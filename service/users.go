@@ -5,15 +5,22 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"log/slog"
-	"pictureloader/database/postgres"
 	"pictureloader/models"
 )
 
-type UserService struct {
-	database postgres.UserRepository
+type UserRepositoryInterface interface {
+	CreateNewUser(ctx context.Context, user *models.User) error
+	GetUserByID(ctx context.Context, id int) (*models.User, error)
+	DeleteUserByID(ctx context.Context, id int) error
+	GetUserByUsername(ctx context.Context, username string) (*models.User, error)
+	ChangeUsernameByID(ctx context.Context, userID int, newUsername string) error
 }
 
-func NewUserService(database postgres.UserRepository) *UserService {
+type UserService struct {
+	database UserRepositoryInterface
+}
+
+func NewUserService(database UserRepositoryInterface) *UserService {
 	return &UserService{database}
 }
 

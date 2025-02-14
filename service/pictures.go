@@ -5,16 +5,23 @@ import (
 	"fmt"
 	"log/slog"
 	"math/rand"
-	db "pictureloader/database"
 	"pictureloader/database/postgres"
 	"pictureloader/image_storage"
 	"pictureloader/models"
 	"strconv"
 )
 
+type ImageManager interface {
+	UploadImage(ctx context.Context, userID int, URL string, description string) error
+	GetUserImagesID(ctx context.Context, userID int) ([]string, error)
+	GetImageDescription(ctx context.Context, imageURL string) (string, error)
+	DeleteImage(ctx context.Context, imageID string) error
+	IsOwnerOfPicture(ctx context.Context, userID int, imageSK string) error
+}
+
 type PictureLoader struct {
 	storage  image_storage.ImageStorage
-	database db.ImageRepositoryInterface
+	database ImageManager
 }
 
 func NewPictureLoader(storage image_storage.ImageStorage, database *postgres.ImageRepository) *PictureLoader {

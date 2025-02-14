@@ -78,7 +78,7 @@ func (server *Server) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	//ответ
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message":"Registration successful", "cookie":"` + jwtValue + `"}`))
+	w.Write([]byte(`{"message":"Registration successful"}`))
 }
 
 // LoginUserHandler handles user login
@@ -124,7 +124,7 @@ func (server *Server) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message":"Login successful", "cookie":"` + jwtValue + `"}`))
+	w.Write([]byte(`{"message":"Login successful"}`))
 }
 
 // LogoutHandler handles user logout
@@ -195,7 +195,6 @@ type usernameReqChange struct {
 // @Accept  json
 // @Produce  json
 // @Param username body usernameReqChange true "New Username"
-// @Security BearerAuth
 // @Router /users/profile/username [patch]
 func (server *Server) ChangeUsername(w http.ResponseWriter, r *http.Request) {
 	claims := r.Context().Value("claims").(jwt2.MapClaims)

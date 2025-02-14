@@ -7,22 +7,36 @@ import (
 	"github.com/redis/go-redis/v9"
 	"log/slog"
 	cache "pictureloader/caching"
-	db "pictureloader/database"
 	"pictureloader/image_storage"
 	"pictureloader/models"
 	"strconv"
 	"time"
+	"unicode/utf8"
 )
 
+type AlbumRepositoryInterface interface {
+	CreateAlbum(ctx context.Context, album *models.Album) error
+	CreateAlbumAndImage(ctx context.Context, albumImage *models.AlbumImage) error
+	GetAlbumData(ctx context.Context, albumID int) (string, map[string]string, error)
+	GetUserAlbumIDs(ctx context.Context, userID int) ([]int, error)
+	DeleteAlbumByID(ctx context.Context, albumID int) error
+	DeleteAlbumImage(ctx context.Context, albumID int, imageID int) error
+	IsOwnerOfAlbum(ctx context.Context, userID int, albumID int) error
+}
+
+type ImageWorker interface {
+	GetImageIDBySK(ctx context.Context, imageSK string) (int, error)
+}
+
 type AlbumService struct {
-	database      db.AlbumRepositoryInterface
+	database      AlbumRepositoryInterface
 	storage       image_storage.ImageStorage
-	imageDatabase db.ImageRepositoryInterface
+	imageDatabase ImageWorker
 	cache         cache.Cacher
 }
 
-func NewAlbumService(database db.AlbumRepositoryInterface, storage image_storage.ImageStorage,
-	imageDatabase db.ImageRepositoryInterface, cacher cache.Cacher) *AlbumService {
+func NewAlbumService(database AlbumRepositoryInterface, storage image_storage.ImageStorage,
+	imageDatabase ImageWorker, cacher cache.Cacher) *AlbumService {
 	return &AlbumService{
 		database:      database,
 		storage:       storage,
@@ -32,6 +46,9 @@ func NewAlbumService(database db.AlbumRepositoryInterface, storage image_storage
 }
 
 func (als *AlbumService) CreateAlbum(ctx context.Context, album *models.Album) error {
+	if album.Name == "" || utf8.RuneCountInString(album.Name) > 30 {
+		return errors.New("invalid album name")
+	}
 	err := als.database.CreateAlbum(ctx, album)
 	if err != nil {
 		slog.Error("Create album", "error", err)
@@ -77,11 +94,12 @@ func (als *AlbumService) GetAlbum(ctx context.Context, albumID int) (models.Albu
 
 	resultJSON, _ := json.Marshal(result)
 
-	err = als.cache.Set(ctx, strconv.Itoa(albumID), string(resultJSON), time.Hour*5)
-	if err != nil {
-		slog.Error("Set album", "error", err)
-		return models.AlbumUnit{}, err
-	}
+	go func() {
+		err = als.cache.Set(ctx, strconv.Itoa(albumID), string(resultJSON), time.Hour*5)
+		if err != nil {
+			slog.Error("Set album", "error", err)
+		}
+	}()
 
 	return result, nil
 }
@@ -117,11 +135,12 @@ func (als *AlbumService) GetUserAlbums(ctx context.Context, userID int) (map[int
 
 	resultJSON, _ := json.Marshal(result)
 
-	err = als.cache.Set(ctx, strconv.Itoa(userID)+"_albums", string(resultJSON), time.Hour*5)
-	if err != nil {
-		slog.Error("Set album", "error", err)
-		return map[int]models.AlbumUnit{}, err
-	}
+	go func() {
+		err = als.cache.Set(ctx, strconv.Itoa(userID)+"_albums", string(resultJSON), time.Hour*5)
+		if err != nil {
+			slog.Error("Set album", "error", err)
+		}
+	}()
 
 	return result, nil
 }

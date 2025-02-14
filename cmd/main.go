@@ -41,7 +41,7 @@ func main() {
 	slog.Info("Image and User repositories initialized")
 
 	imageService := service.NewPictureLoader(minioprov, imageRepo)
-	userService := service.NewUserService(*userRepo)
+	userService := service.NewUserService(userRepo)
 	albumService := service.NewAlbumService(albumRepo, minioprov, imageRepo, cache)
 	slog.Info("Image and User services initialized")
 
