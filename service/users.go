@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"errors"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"log/slog"
 	"pictureloader/models"
+	"strings"
 )
 
 type UserRepositoryInterface interface {
@@ -25,6 +27,14 @@ func NewUserService(database UserRepositoryInterface) *UserService {
 }
 
 func (u *UserService) RegisterUser(ctx context.Context, user *models.User) error {
+	if user.Username == "" || strings.Contains(user.Username, " ") {
+		return errors.New("invalid username")
+	}
+
+	if user.Email == "" || strings.Contains(user.Email, " ") || !strings.Contains(user.Email, "@") {
+		return errors.New("invalid email")
+	}
+
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	user.Password = string(hashedPassword)
 	return u.database.CreateNewUser(ctx, user)
