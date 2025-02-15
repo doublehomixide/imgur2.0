@@ -43,3 +43,8 @@ func (u *UserRepository) ChangeUsernameByID(ctx context.Context, userID int, new
 	err := u.db.WithContext(ctx).Model(&models.User{}).Where("id = ?", userID).Update("username", newUsername).Error
 	return err
 }
+
+func (u *UserRepository) UpdatePasswordByID(ctx context.Context, userID int, newPass string) error {
+	err := u.db.WithContext(ctx).Model(&models.User{}).Where("id = ?", userID).Update("password", newPass).Error
+	return err
+}

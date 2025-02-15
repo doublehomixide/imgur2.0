@@ -16,6 +16,7 @@ type UserRepositoryInterface interface {
 	DeleteUserByID(ctx context.Context, id int) error
 	GetUserByUsername(ctx context.Context, username string) (*models.User, error)
 	ChangeUsernameByID(ctx context.Context, userID int, newUsername string) error
+	UpdatePasswordByID(ctx context.Context, userID int, newPassword string) error
 }
 
 type UserService struct {
@@ -72,6 +73,21 @@ func (u *UserService) DeleteUserByID(ctx context.Context, userID int) error {
 
 func (u *UserService) UpdateUsername(ctx context.Context, userID int, username string) error {
 	err := u.database.ChangeUsernameByID(ctx, userID, username)
+	if err != nil {
+		slog.Error("UpdateUsername error", "error", err)
+		return err
+	}
+	return nil
+}
+
+func (u *UserService) UpdatePassword(ctx context.Context, userID int, newPassword string) error {
+	hashedPass, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		slog.Error("UpdatePassword error", "error", err)
+		return err
+	}
+	newPassword = string(hashedPass)
+	err = u.database.UpdatePasswordByID(ctx, userID, newPassword)
 	if err != nil {
 		slog.Error("UpdateUsername error", "error", err)
 		return err

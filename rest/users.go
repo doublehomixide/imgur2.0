@@ -30,6 +30,7 @@ func UserRouter(api *mux.Router, server *Server) {
 	subrouter := router.PathPrefix("/profile").Subrouter()
 	subrouter.HandleFunc("", server.DeleteProfile).Methods("DELETE")
 	subrouter.HandleFunc("/username", server.ChangeUsername).Methods("PATCH")
+	subrouter.HandleFunc("/password", server.ChangePassword).Methods("PATCH")
 	subrouter.Use(jwtutils.AuthMiddleware)
 }
 
@@ -218,6 +219,46 @@ func (server *Server) ChangeUsername(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message":"Change successful"}`))
+}
+
+type passwordReqChange struct {
+	Password string `json:"password"`
+}
+
+// ChangePassword handles user password change
+// @Summary Change user password
+// @Description Allows an authenticated user to change their password
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param request body passwordReqChange true "New password request body"
+// @Router /users/profile/password [patch]
+func (server *Server) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	claims := r.Context().Value("claims").(jwt2.MapClaims)
+	sub := claims["sub"].(float64)
+	userID := int(sub)
+
+	var request passwordReqChange
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"error": "Invalid JSON body"}`))
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	err := server.core.UpdatePassword(ctx, userID, request.Password)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message":"Change successful"}`))
