@@ -6,7 +6,7 @@ type User struct {
 	Email    string  `gorm:"unique" json:"email"`
 	Password string  `json:"password"`
 	Images   []Image `json:"images"`
-	Albums   []Album `json:"albums"`
+	Albums   []Post  `json:"albums"`
 }
 
 type UserLogin struct {

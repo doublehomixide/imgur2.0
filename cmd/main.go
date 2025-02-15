@@ -37,17 +37,17 @@ func main() {
 	//database and service related to the database init
 	userRepo := postgres.NewUserRepository(psqlDB)
 	imageRepo := postgres.NewImageRepository(psqlDB)
-	albumRepo := postgres.NewAlbumRepository(psqlDB)
+	postRepo := postgres.NewPostRepository(psqlDB)
 	slog.Info("Image and User repositories initialized")
 
 	imageService := service.NewPictureLoader(minioprov, imageRepo)
 	userService := service.NewUserService(userRepo)
-	albumService := service.NewAlbumService(albumRepo, minioprov, imageRepo, cache)
+	albumService := service.NewPostService(postRepo, minioprov, imageRepo, cache)
 	slog.Info("Image and User services initialized")
 
 	picturesServer := rest.PictureNewServer(imageService)
 	userServer := rest.NewUserServer(userService)
-	albumServer := rest.NewAlbumServer(*albumService)
+	albumServer := rest.NewPostServer(*albumService)
 
 	slog.Info("User and Image server initialized")
 
@@ -56,7 +56,7 @@ func main() {
 	mainRouter.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 	rest.PictureRouter(mainRouter, picturesServer)
 	rest.UserRouter(mainRouter, userServer)
-	rest.AlbumRouter(mainRouter, albumServer)
+	rest.PostRouter(mainRouter, albumServer)
 	slog.Info("Routers are running")
 
 	slog.Info("Starting server on port ", "port", cfg.ServerPort)

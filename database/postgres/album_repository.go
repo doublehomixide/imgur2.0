@@ -7,58 +7,58 @@ import (
 	"pictureloader/models"
 )
 
-type AlbumRepository struct {
+type PostRepository struct {
 	db *gorm.DB
 }
 
-func NewAlbumRepository(db *gorm.DB) *AlbumRepository {
-	return &AlbumRepository{db: db}
+func NewPostRepository(db *gorm.DB) *PostRepository {
+	return &PostRepository{db: db}
 }
 
-func (ar *AlbumRepository) CreateAlbum(ctx context.Context, album *models.Album) error {
-	return ar.db.WithContext(ctx).Create(&album).Error
+func (pr *PostRepository) CreatePost(ctx context.Context, post *models.Post) error {
+	return pr.db.WithContext(ctx).Create(&post).Error
 }
 
-func (ar *AlbumRepository) CreateAlbumAndImage(ctx context.Context, albumImage *models.AlbumImage) error {
-	return ar.db.WithContext(ctx).Create(&albumImage).Error
+func (pr *PostRepository) CreatePostAndImage(ctx context.Context, postImage *models.PostImage) error {
+	return pr.db.WithContext(ctx).Create(&postImage).Error
 }
 
-// GetAlbumData returns album name, hashmap where key is s3 storage StorageKey, value is description, error
-func (ar *AlbumRepository) GetAlbumData(ctx context.Context, albumID int) (string, map[string]string, error) {
-	var album models.Album
-	if err := ar.db.WithContext(ctx).Preload("Images").First(&album, albumID).Error; err != nil {
+// GetPostData returns post name, hashmap where key is s3 storage StorageKey, value is description, error
+func (pr *PostRepository) GetPostData(ctx context.Context, postID int) (string, map[string]string, error) {
+	var post models.Post
+	if err := pr.db.WithContext(ctx).Preload("Images").First(&post, postID).Error; err != nil {
 		return "", nil, err
 	}
 
 	images := make(map[string]string)
-	for _, image := range album.Images {
+	for _, image := range post.Images {
 		images[image.StorageKey] = image.Description
 	}
 
-	return album.Name, images, nil
+	return post.Name, images, nil
 }
 
-func (ar *AlbumRepository) GetUserAlbumIDs(ctx context.Context, userID int) ([]int, error) {
+func (pr *PostRepository) GetUserPostIDs(ctx context.Context, userID int) ([]int, error) {
 	var idSlice []int
-	if err := ar.db.WithContext(ctx).Model(&models.Album{}).Where("user_id = ?", userID).Pluck("id", &idSlice).Error; err != nil {
+	if err := pr.db.WithContext(ctx).Model(&models.Post{}).Where("user_id = ?", userID).Pluck("id", &idSlice).Error; err != nil {
 		return nil, err
 	}
 	return idSlice, nil
 }
 
-func (ar *AlbumRepository) DeleteAlbumByID(ctx context.Context, albumID int) error {
-	return ar.db.WithContext(ctx).Delete(&models.Album{}, albumID).Error
+func (pr *PostRepository) DeletePostByID(ctx context.Context, postID int) error {
+	return pr.db.WithContext(ctx).Delete(&models.Post{}, postID).Error
 }
 
-func (ar *AlbumRepository) DeleteAlbumImage(ctx context.Context, albumID int, imageID int) error {
-	return ar.db.WithContext(ctx).Delete(&models.AlbumImage{}, "album_id = ? AND image_id = ?", albumID, imageID).Error
+func (pr *PostRepository) DeletePostImage(ctx context.Context, postID int, imageID int) error {
+	return pr.db.WithContext(ctx).Delete(&models.PostImage{}, "post_id = ? AND image_id = ?", postID, imageID).Error
 }
 
-func (ar *AlbumRepository) IsOwnerOfAlbum(ctx context.Context, userID int, albumID int) error {
+func (pr *PostRepository) IsOwnerOfPost(ctx context.Context, userID int, postID int) error {
 	var trueUserID int
-	ar.db.WithContext(ctx).Model(&models.Album{}).Where("id = ?", albumID).Pluck("user_id", &trueUserID)
+	pr.db.WithContext(ctx).Model(&models.Post{}).Where("id = ?", postID).Pluck("user_id", &trueUserID)
 	if userID != trueUserID {
-		return fmt.Errorf("user is not owner of this album %d", albumID)
+		return fmt.Errorf("user is not owner of this post %d", postID)
 	}
 	return nil
 }

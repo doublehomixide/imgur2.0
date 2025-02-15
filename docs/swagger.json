@@ -8,159 +8,6 @@
     },
     "host": "localhost:8080",
     "paths": {
-        "/albums": {
-            "post": {
-                "description": "Creates an album for an authenticated user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Albums"
-                ],
-                "summary": "Create an album",
-                "parameters": [
-                    {
-                        "description": "Album name",
-                        "name": "Name",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.AlbumRegister"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/albums/my": {
-            "get": {
-                "description": "Retrieves all albums of the user by their ID.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Albums"
-                ],
-                "summary": "Get user albums",
-                "responses": {}
-            }
-        },
-        "/albums/{albumID}": {
-            "get": {
-                "description": "Retrieves all images from the specified album for an authenticated user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Albums"
-                ],
-                "summary": "Get images from an album",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Album ID",
-                        "name": "albumID",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {}
-            },
-            "delete": {
-                "description": "Deletes the specified album along with its associated images for an authenticated user.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Albums"
-                ],
-                "summary": "Delete an album",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Album ID",
-                        "name": "albumID",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/albums/{albumID}/{imageSK}": {
-            "post": {
-                "description": "Adds an image with imageID to an album with albumID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Albums"
-                ],
-                "summary": "Add an image to an album",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Album ID",
-                        "name": "albumID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Image Storage Key",
-                        "name": "imageSK",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {}
-            },
-            "delete": {
-                "description": "Deletes an image by its identifier (storage key) from the album with the given AlbumID.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Albums"
-                ],
-                "summary": "Removes an image from the specified album.",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Album ID",
-                        "name": "albumID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Image Storage Key",
-                        "name": "imageSK",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {}
-            }
-        },
         "/pictures/create": {
             "post": {
                 "description": "This endpoint allows a user to upload an image file.",
@@ -257,6 +104,159 @@
                 "responses": {}
             }
         },
+        "/posts": {
+            "post": {
+                "description": "Creates a new post for the user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Create a new post",
+                "parameters": [
+                    {
+                        "description": "Post",
+                        "name": "post",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.PostRegister"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/posts/my": {
+            "get": {
+                "description": "Retrieves all posts of the currently authenticated user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Get all posts of the user",
+                "responses": {}
+            }
+        },
+        "/posts/{postID}": {
+            "get": {
+                "description": "Retrieves images and details from a specific post.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Get post details",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "delete": {
+                "description": "Removes a specific post and all its images from the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Delete a post",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/posts/{postID}/{imageSK}": {
+            "post": {
+                "description": "Adds an image to the specified post.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Add an image to a post",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Image Storage Key",
+                        "name": "imageSK",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "delete": {
+                "description": "Removes a specific image from the specified post.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Delete an image from a post",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Image Storage Key",
+                        "name": "imageSK",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/users/login": {
             "post": {
                 "description": "This endpoint allows a user to log in by providing their username and password. If the credentials are correct, a JWT token will be generated and returned in a cookie for session management.",
@@ -316,13 +316,35 @@
                 "responses": {}
             }
         },
-        "/users/profile/username": {
+        "/users/profile/password": {
             "patch": {
-                "security": [
+                "description": "Allows an authenticated user to change their password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Change user password",
+                "parameters": [
                     {
-                        "BearerAuth": []
+                        "description": "New password request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/rest.passwordReqChange"
+                        }
                     }
                 ],
+                "responses": {}
+            }
+        },
+        "/users/profile/username": {
+            "patch": {
                 "description": "This endpoint allows the user to change their username. The new username is passed in the body of the request.",
                 "consumes": [
                     "application/json"
@@ -377,7 +399,7 @@
         }
     },
     "definitions": {
-        "models.AlbumRegister": {
+        "models.PostRegister": {
             "type": "object",
             "properties": {
                 "name": {
@@ -406,6 +428,14 @@
                     "type": "string"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "rest.passwordReqChange": {
+            "type": "object",
+            "properties": {
+                "password": {
                     "type": "string"
                 }
             }

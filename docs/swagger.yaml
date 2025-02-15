@@ -1,5 +1,5 @@
 definitions:
-  models.AlbumRegister:
+  models.PostRegister:
     properties:
       name:
         type: string
@@ -20,6 +20,11 @@ definitions:
       username:
         type: string
     type: object
+  rest.passwordReqChange:
+    properties:
+      password:
+        type: string
+    type: object
   rest.usernameReqChange:
     properties:
       username:
@@ -32,114 +37,6 @@ info:
   title: Imgur 2.0 API
   version: "1.0"
 paths:
-  /albums:
-    post:
-      consumes:
-      - application/json
-      description: Creates an album for an authenticated user
-      parameters:
-      - description: Album name
-        in: body
-        name: Name
-        required: true
-        schema:
-          $ref: '#/definitions/models.AlbumRegister'
-      produces:
-      - application/json
-      responses: {}
-      summary: Create an album
-      tags:
-      - Albums
-  /albums/{albumID}:
-    delete:
-      consumes:
-      - application/json
-      description: Deletes the specified album along with its associated images for
-        an authenticated user.
-      parameters:
-      - description: Album ID
-        in: path
-        name: albumID
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses: {}
-      summary: Delete an album
-      tags:
-      - Albums
-    get:
-      consumes:
-      - application/json
-      description: Retrieves all images from the specified album for an authenticated
-        user
-      parameters:
-      - description: Album ID
-        in: path
-        name: albumID
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses: {}
-      summary: Get images from an album
-      tags:
-      - Albums
-  /albums/{albumID}/{imageSK}:
-    delete:
-      consumes:
-      - application/json
-      description: Deletes an image by its identifier (storage key) from the album
-        with the given AlbumID.
-      parameters:
-      - description: Album ID
-        in: path
-        name: albumID
-        required: true
-        type: integer
-      - description: Image Storage Key
-        in: path
-        name: imageSK
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses: {}
-      summary: Removes an image from the specified album.
-      tags:
-      - Albums
-    post:
-      consumes:
-      - application/json
-      description: Adds an image with imageID to an album with albumID
-      parameters:
-      - description: Album ID
-        in: path
-        name: albumID
-        required: true
-        type: integer
-      - description: Image Storage Key
-        in: path
-        name: imageSK
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses: {}
-      summary: Add an image to an album
-      tags:
-      - Albums
-  /albums/my:
-    get:
-      consumes:
-      - application/json
-      description: Retrieves all albums of the user by their ID.
-      produces:
-      - application/json
-      responses: {}
-      summary: Get user albums
-      tags:
-      - Albums
   /pictures/{imageURL}:
     delete:
       consumes:
@@ -206,6 +103,111 @@ paths:
       summary: Download an image(s)
       tags:
       - Image
+  /posts:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new post for the user.
+      parameters:
+      - description: Post
+        in: body
+        name: post
+        required: true
+        schema:
+          $ref: '#/definitions/models.PostRegister'
+      produces:
+      - application/json
+      responses: {}
+      summary: Create a new post
+      tags:
+      - Posts
+  /posts/{postID}:
+    delete:
+      consumes:
+      - application/json
+      description: Removes a specific post and all its images from the system.
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete a post
+      tags:
+      - Posts
+    get:
+      consumes:
+      - application/json
+      description: Retrieves images and details from a specific post.
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Get post details
+      tags:
+      - Posts
+  /posts/{postID}/{imageSK}:
+    delete:
+      consumes:
+      - application/json
+      description: Removes a specific image from the specified post.
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: integer
+      - description: Image Storage Key
+        in: path
+        name: imageSK
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete an image from a post
+      tags:
+      - Posts
+    post:
+      consumes:
+      - application/json
+      description: Adds an image to the specified post.
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: integer
+      - description: Image Storage Key
+        in: path
+        name: imageSK
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Add an image to a post
+      tags:
+      - Posts
+  /posts/my:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all posts of the currently authenticated user.
+      produces:
+      - application/json
+      responses: {}
+      summary: Get all posts of the user
+      tags:
+      - Posts
   /users/login:
     post:
       consumes:
@@ -250,6 +252,24 @@ paths:
       summary: Delete user profile
       tags:
       - User
+  /users/profile/password:
+    patch:
+      consumes:
+      - application/json
+      description: Allows an authenticated user to change their password
+      parameters:
+      - description: New password request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rest.passwordReqChange'
+      produces:
+      - application/json
+      responses: {}
+      summary: Change user password
+      tags:
+      - User
   /users/profile/username:
     patch:
       consumes:
@@ -266,8 +286,6 @@ paths:
       produces:
       - application/json
       responses: {}
-      security:
-      - BearerAuth: []
       summary: Change the username of the authenticated user
       tags:
       - User
