@@ -65,3 +65,18 @@ func (i *ImageRepository) IsOwnerOfPicture(ctx context.Context, userID int, imag
 	}
 	return nil
 }
+
+func (i *ImageRepository) GetImageLinkedPost(ctx context.Context, imageSK string) (int, error) {
+	var postID int
+	err := i.db.WithContext(ctx).
+		Table("post_images").
+		Select("post_id").
+		Joins("JOIN images ON post_images.image_id = images.id").
+		Where("images.storage_key = ?", imageSK).
+		Limit(1).
+		Pluck("post_id", &postID).Error
+	if err != nil {
+		return 0, err
+	}
+	return postID, nil
+}

@@ -32,7 +32,6 @@ func main() {
 	slog.Info("Minio provider initialized")
 	psqlDB := postgres.NewDataBase(cfg.PsqlDBPath)
 	slog.Info("Postgres DB initialized")
-	cache := redis.NewRedisClient()
 
 	//database and service related to the database init
 	userRepo := postgres.NewUserRepository(psqlDB)
@@ -40,7 +39,9 @@ func main() {
 	postRepo := postgres.NewPostRepository(psqlDB)
 	slog.Info("Image and User repositories initialized")
 
-	imageService := service.NewPictureLoader(minioprov, imageRepo)
+	cache := redis.NewRedisClient(imageRepo)
+
+	imageService := service.NewPictureLoader(minioprov, imageRepo, cache)
 	userService := service.NewUserService(userRepo)
 	albumService := service.NewPostService(postRepo, minioprov, imageRepo, cache)
 	slog.Info("Image and User services initialized")

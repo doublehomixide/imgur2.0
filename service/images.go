@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math/rand"
@@ -19,13 +20,18 @@ type ImageManager interface {
 	IsOwnerOfPicture(ctx context.Context, userID int, imageSK string) error
 }
 
+type Cacher interface {
+	DeleteImageFromPostCache(ctx context.Context, imageSK string) (bool, error)
+}
+
 type PictureLoader struct {
 	storage  image_storage.ImageStorage
 	database ImageManager
+	cache    Cacher
 }
 
-func NewPictureLoader(storage image_storage.ImageStorage, database *postgres.ImageRepository) *PictureLoader {
-	return &PictureLoader{storage, database}
+func NewPictureLoader(storage image_storage.ImageStorage, database *postgres.ImageRepository, cache Cacher) *PictureLoader {
+	return &PictureLoader{storage, database, cache}
 }
 
 func (p *PictureLoader) Upload(ctx context.Context, img models.ImageUnit, userID int, description string) (string, error) {
@@ -71,19 +77,29 @@ func (p *PictureLoader) GetAllUserPictures(ctx context.Context, userID int) ([]s
 	return imageURLS, err
 }
 
-func (p *PictureLoader) Delete(ctx context.Context, userID int, imgName string) error {
-	err := p.database.IsOwnerOfPicture(ctx, userID, imgName)
+func (p *PictureLoader) Delete(ctx context.Context, userID int, imgSK string) error {
+	err := p.database.IsOwnerOfPicture(ctx, userID, imgSK)
 	if err != nil {
 		slog.Error("Database delete error", "error", err)
 		return err
 	}
 
-	err = p.storage.DeleteFileByURL(ctx, imgName)
+	result, err := p.cache.DeleteImageFromPostCache(ctx, imgSK)
+	if err != nil {
+		slog.Error("Cache delete error", "error", err)
+		return err
+	}
+	if !result {
+		slog.Error("Cache delete error: no such key")
+		return errors.New("no such key")
+	}
+
+	err = p.storage.DeleteFileByURL(ctx, imgSK)
 	if err != nil {
 		slog.Info("Storage delete error", "error", err)
 		return err
 	}
-	err = p.database.DeleteImage(ctx, imgName)
+	err = p.database.DeleteImage(ctx, imgSK)
 	if err != nil {
 		slog.Info("Database delete error", "error", err)
 		return err
