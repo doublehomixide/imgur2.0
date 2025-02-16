@@ -62,3 +62,17 @@ func (pr *PostRepository) IsOwnerOfPost(ctx context.Context, userID int, postID 
 	}
 	return nil
 }
+
+func (pr *PostRepository) GetPostLikesCount(ctx context.Context, postID int) (int, error) {
+	var count int64
+	err := pr.db.WithContext(ctx).Model(&models.Like{}).Where("post_id = ?", postID).Count(&count).Error
+	return int(count), err
+}
+
+func (pr *PostRepository) LikePost(ctx context.Context, postID, userID int) error {
+	err := pr.db.WithContext(ctx).Create(&models.Like{PostID: postID, UserID: userID}).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}

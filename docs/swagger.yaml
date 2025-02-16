@@ -197,6 +197,23 @@ paths:
       summary: Add an image to a post
       tags:
       - Posts
+  /posts/{postID}/like:
+    post:
+      consumes:
+      - application/json
+      description: Increments the like count of a post and invalidates cache
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Like a post
+      tags:
+      - Posts
   /posts/my:
     get:
       consumes:

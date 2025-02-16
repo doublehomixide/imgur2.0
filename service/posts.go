@@ -6,7 +6,6 @@ import (
 	"errors"
 	"github.com/redis/go-redis/v9"
 	"log/slog"
-	cache "pictureloader/caching"
 	"pictureloader/image_storage"
 	"pictureloader/models"
 	"strconv"
@@ -22,6 +21,15 @@ type PostRepositoryInterface interface {
 	DeletePostByID(ctx context.Context, albumID int) error
 	DeletePostImage(ctx context.Context, albumID int, imageID int) error
 	IsOwnerOfPost(ctx context.Context, userID int, albumID int) error
+	GetPostLikesCount(ctx context.Context, postID int) (int, error)
+	LikePost(ctx context.Context, postID, userID int) error
+}
+
+type AlbumCacher interface {
+	InvalidatePost(ctx context.Context, postID int) (bool, error)
+	Get(ctx context.Context, key string) (string, error)
+	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error
+	Delete(ctx context.Context, key string) error
 }
 
 type ImageWorker interface {
@@ -32,11 +40,11 @@ type PostService struct {
 	database      PostRepositoryInterface
 	storage       image_storage.ImageStorage
 	imageDatabase ImageWorker
-	cache         cache.Cacher
+	cache         AlbumCacher
 }
 
 func NewPostService(database PostRepositoryInterface, storage image_storage.ImageStorage,
-	imageDatabase ImageWorker, cacher cache.Cacher) *PostService {
+	imageDatabase ImageWorker, cacher AlbumCacher) *PostService {
 	return &PostService{
 		database:      database,
 		storage:       storage,
@@ -71,6 +79,12 @@ func (als *PostService) GetPost(ctx context.Context, postID int) (models.PostUni
 		return album, nil
 	}
 
+	likesCount, err := als.database.GetPostLikesCount(ctx, postID)
+	if err != nil {
+		slog.Error("Get post likes count", "error", err)
+		return models.PostUnit{}, err
+	}
+
 	postName, images, err := als.database.GetPostData(ctx, postID)
 	if err != nil {
 		slog.Error("Get images from post", "error", err)
@@ -90,6 +104,7 @@ func (als *PostService) GetPost(ctx context.Context, postID int) (models.PostUni
 	result := models.PostUnit{
 		Name:   postName,
 		Images: updatedImages,
+		Likes:  likesCount,
 	}
 
 	resultJSON, _ := json.Marshal(result)
@@ -143,15 +158,14 @@ func (als *PostService) AppendImageToPost(ctx context.Context, postID int, image
 		return err
 	}
 
-	err = als.cache.Delete(ctx, strconv.Itoa(postID))
+	ok, err := als.cache.InvalidatePost(ctx, postID)
 	if err != nil {
 		slog.Error("Delete post", "error", err)
 		return err
 	}
-	err = als.cache.Delete(ctx, strconv.Itoa(userID)+"_posts")
-	if err != nil {
-		slog.Error("Delete user posts", "error", err)
-		return err
+	if ok == false {
+		slog.Info("No such post", "postID", postID)
+		return errors.New("no such post")
 	}
 
 	return nil
@@ -170,15 +184,14 @@ func (als *PostService) DeletePost(ctx context.Context, postID int, userID int) 
 		return err
 	}
 
-	err = als.cache.Delete(ctx, strconv.Itoa(postID))
+	ok, err := als.cache.InvalidatePost(ctx, postID)
 	if err != nil {
 		slog.Error("Delete post", "error", err)
 		return err
 	}
-	err = als.cache.Delete(ctx, strconv.Itoa(userID)+"_posts")
-	if err != nil {
-		slog.Error("Delete user posts", "error", err)
-		return err
+	if ok == false {
+		slog.Info("No such post", "postID", postID)
+		return errors.New("no such post")
 	}
 
 	return nil
@@ -202,16 +215,29 @@ func (als *PostService) DeleteImageFromPost(ctx context.Context, postID int, ima
 		return err
 	}
 
-	err = als.cache.Delete(ctx, strconv.Itoa(postID))
+	ok, err := als.cache.InvalidatePost(ctx, postID)
 	if err != nil {
 		slog.Error("Delete post", "error", err)
 		return err
 	}
-	err = als.cache.Delete(ctx, strconv.Itoa(userID)+"_posts")
-	if err != nil {
-		slog.Error("Delete user posts", "error", err)
-		return err
+	if ok == false {
+		slog.Info("No such post", "postID", postID)
+		return errors.New("no such post")
 	}
 
+	return nil
+}
+
+func (als *PostService) LikePost(ctx context.Context, postID, userID int) error {
+	err := als.cache.Delete(ctx, strconv.Itoa(postID))
+	if err != nil {
+		slog.Error("Delete post", "error", err)
+		return err
+	}
+	err = als.database.LikePost(ctx, postID, userID)
+	if err != nil {
+		slog.Error("Like post", "error", err)
+		return err
+	}
 	return nil
 }
