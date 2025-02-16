@@ -18,10 +18,11 @@ type ImageManager interface {
 	GetImageDescription(ctx context.Context, imageURL string) (string, error)
 	DeleteImage(ctx context.Context, imageID string) error
 	IsOwnerOfPicture(ctx context.Context, userID int, imageSK string) error
+	GetImageLinkedPost(ctx context.Context, imageSK string) (int, error)
 }
 
 type Cacher interface {
-	DeleteImageFromPostCache(ctx context.Context, imageSK string) (bool, error)
+	InvalidatePost(ctx context.Context, postID int) (bool, error)
 }
 
 type PictureLoader struct {
@@ -84,7 +85,13 @@ func (p *PictureLoader) Delete(ctx context.Context, userID int, imgSK string) er
 		return err
 	}
 
-	result, err := p.cache.DeleteImageFromPostCache(ctx, imgSK)
+	postID, err := p.database.GetImageLinkedPost(ctx, imgSK)
+	if err != nil {
+		slog.Error("Database get image linked post error", "error", err)
+		return err
+	}
+
+	result, err := p.cache.InvalidatePost(ctx, postID)
 	if err != nil {
 		slog.Error("Cache delete error", "error", err)
 		return err

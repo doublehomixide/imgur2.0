@@ -2,7 +2,6 @@ package redis
 
 import (
 	"context"
-	"errors"
 	"github.com/redis/go-redis/v9"
 	"strconv"
 	"time"
@@ -35,11 +34,7 @@ func (rr *RedisRepo) Delete(ctx context.Context, key string) error {
 	return rr.rdb.Del(ctx, key).Err()
 }
 
-func (rr *RedisRepo) DeleteImageFromPostCache(ctx context.Context, imageSK string) (bool, error) {
-	postID, err := rr.imageRepo.GetImageLinkedPost(ctx, imageSK)
-	if err != nil {
-		return false, errors.New("image linked post not found")
-	}
+func (rr *RedisRepo) InvalidatePost(ctx context.Context, postID int) (bool, error) {
 	result, err := rr.rdb.Del(ctx, strconv.Itoa(postID)).Result()
 	if err != nil {
 		return false, err
