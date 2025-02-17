@@ -28,6 +28,8 @@ type PostRepositoryInterface interface {
 
 type AlbumCacher interface {
 	InvalidatePost(ctx context.Context, postID int) (bool, error)
+	SetMostLikedPosts(ctx context.Context, posts []models.PostUnit) error
+	GetMostLikedPosts(ctx context.Context) ([]models.PostUnit, error)
 	Get(ctx context.Context, key string) (string, error)
 	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error
 	Delete(ctx context.Context, key string) error
@@ -245,8 +247,18 @@ func (als *PostService) LikePost(ctx context.Context, postID, userID int) error 
 
 func (als *PostService) GetMostLikedPosts(ctx context.Context) ([]models.PostUnit, error) {
 	//пограничный случай если imageDesc у картинок одинаковые в одном посте, нужно будет что-то придумать todo
-	posts, err := als.database.GetMostLikedPosts(ctx)
+	posts, err := als.cache.GetMostLikedPosts(ctx)
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			slog.Info("Most liked posts arent cached yet", "error", err)
+		} else {
+			slog.Error("Get most liked posts", "error", err)
+		}
+	} else {
+		return posts, nil
+	}
 
+	posts, err = als.database.GetMostLikedPosts(ctx)
 	for _, post := range posts {
 		for k, v := range post.Images {
 			imageURL, err := als.storage.GetFileURL(ctx, v)
@@ -261,5 +273,12 @@ func (als *PostService) GetMostLikedPosts(ctx context.Context) ([]models.PostUni
 		slog.Error("Get most liked posts", "error", err)
 		return nil, err
 	}
+
+	err = als.cache.SetMostLikedPosts(ctx, posts)
+	if err != nil {
+		slog.Error("Cache most liked posts", "error", err)
+		return nil, err
+	}
+
 	return posts, nil
 }
