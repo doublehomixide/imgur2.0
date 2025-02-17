@@ -12,19 +12,25 @@ import (
 
 type UserRepositoryInterface interface {
 	CreateNewUser(ctx context.Context, user *models.User) error
-	GetUserByID(ctx context.Context, id int) (*models.User, error)
+	GetUserByID(ctx context.Context, id int) (*models.UserProfile, error)
 	DeleteUserByID(ctx context.Context, id int) error
 	GetUserByUsername(ctx context.Context, username string) (*models.User, error)
 	ChangeUsernameByID(ctx context.Context, userID int, newUsername string) error
 	UpdatePasswordByID(ctx context.Context, userID int, newPassword string) error
+	UploadProfilePicture(ctx context.Context, userID int, imageSK string) error
+}
+
+type UserStorageManager interface {
+	GetFileURL(context.Context, string) (string, error)
 }
 
 type UserService struct {
 	database UserRepositoryInterface
+	storage  UserStorageManager
 }
 
-func NewUserService(database UserRepositoryInterface) *UserService {
-	return &UserService{database}
+func NewUserService(database UserRepositoryInterface, storage UserStorageManager) *UserService {
+	return &UserService{database, storage}
 }
 
 func (u *UserService) RegisterUser(ctx context.Context, user *models.User) error {
@@ -90,6 +96,36 @@ func (u *UserService) UpdatePassword(ctx context.Context, userID int, newPasswor
 	err = u.database.UpdatePasswordByID(ctx, userID, newPassword)
 	if err != nil {
 		slog.Error("UpdateUsername error", "error", err)
+		return err
+	}
+	return nil
+}
+
+func (u *UserService) GetUserByID(ctx context.Context, userID int) (*models.UserProfile, error) {
+	user, err := u.database.GetUserByID(ctx, userID)
+	if err != nil {
+		slog.Error("GetUserByID error", "error", err)
+		return nil, err
+	}
+	if user.ProfilePicture != "" {
+		user.ProfilePicture, err = u.storage.GetFileURL(ctx, user.ProfilePicture)
+		if err != nil {
+			slog.Error("GetUserByID error", "error", err)
+			return nil, err
+		}
+	}
+
+	if user == nil {
+		slog.Info("GetUserByID: User not found", "error", errors.New("user not found"))
+		return nil, errors.New("user not found")
+	}
+	return user, nil
+}
+
+func (u *UserService) UploadProfilePicture(ctx context.Context, userID int, imageSK string) error {
+	err := u.database.UploadProfilePicture(ctx, userID, imageSK)
+	if err != nil {
+		slog.Error("UploadProfilePicture error", "error", err)
 		return err
 	}
 	return nil

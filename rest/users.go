@@ -29,6 +29,8 @@ func UserRouter(api *mux.Router, server *Server) {
 	jwtutils := jwtutils.UtilsJWT{}
 	subrouter := router.PathPrefix("/profile").Subrouter()
 	subrouter.HandleFunc("", server.DeleteProfile).Methods("DELETE")
+	subrouter.HandleFunc("/me", server.GetMyProfile).Methods("GET")
+	subrouter.HandleFunc("/profile_picture", server.UploadProfilePic).Methods("POST")
 	subrouter.HandleFunc("/username", server.ChangeUsername).Methods("PATCH")
 	subrouter.HandleFunc("/password", server.ChangePassword).Methods("PATCH")
 	subrouter.Use(jwtutils.AuthMiddleware)
@@ -262,4 +264,68 @@ func (server *Server) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message":"Change successful"}`))
+}
+
+// GetMyProfile retrieves the current user's profile.
+// @Summary      Get user profile
+// @Description  Returns the user profile based on the JWT token.
+// @Tags         User
+// @Produce      json
+// @Router       /users/profile/me [get]
+func (server *Server) GetMyProfile(w http.ResponseWriter, r *http.Request) {
+	claims := r.Context().Value("claims").(jwt2.MapClaims)
+	sub := claims["sub"].(float64)
+	userID := int(sub)
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	user, err := server.core.GetUserByID(ctx, userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(user)
+}
+
+type UploadProfilePicRequest struct {
+	PictureSK string `json:"picture_sk"`
+}
+
+// UploadProfilePic uploads the user's profile picture.
+// @Summary      Upload profile picture
+// @Description  Allows the user to upload a profile picture by providing the path (PictureSK).
+// @Tags         User
+// @Accept       json
+// @Produce      json
+// @Param        request body UploadProfilePicRequest true "Upload data"
+// @Router       /users/profile/profile_picture [post]
+func (server *Server) UploadProfilePic(w http.ResponseWriter, r *http.Request) {
+	claims := r.Context().Value("claims").(jwt2.MapClaims)
+	sub := claims["sub"].(float64)
+	userID := int(sub)
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	var pic UploadProfilePicRequest
+	if err := json.NewDecoder(r.Body).Decode(&pic); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"error": "Invalid JSON body"}`))
+		return
+	}
+
+	err := server.core.UploadProfilePicture(ctx, userID, pic.PictureSK)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message":"Upload successful"}`))
 }
