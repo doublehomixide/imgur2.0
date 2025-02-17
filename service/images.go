@@ -2,14 +2,15 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log/slog"
-	"math/rand"
 	"pictureloader/database/postgres"
 	"pictureloader/image_storage"
 	"pictureloader/models"
-	"strconv"
+	"strings"
 )
 
 type ImageManager interface {
@@ -35,14 +36,29 @@ func NewPictureLoader(storage image_storage.ImageStorage, database *postgres.Ima
 	return &PictureLoader{storage, database, cache}
 }
 
+func GenerateSK(desc string) string {
+	desc = strings.Replace(desc, " ", "_", -1)
+	desc = strings.Replace(desc, "'", "", -1)
+	desc = strings.ToLower(desc)
+
+	randomBytes := make([]byte, 4) // 4 байта = 8 символов в hex
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		panic(err)
+	}
+	randomString := hex.EncodeToString(randomBytes)
+	desc = desc + randomString
+	return desc
+}
+
 func (p *PictureLoader) Upload(ctx context.Context, img models.ImageUnit, userID int, description string) (string, error) {
-	url := strconv.Itoa(rand.Int())
-	imgName, err := p.storage.UploadFile(ctx, img, url)
+	storageKey := GenerateSK(description)
+	imgName, err := p.storage.UploadFile(ctx, img, storageKey)
 	if err != nil {
 		slog.Error("S3 Upload Error", "error", err)
 		return "", fmt.Errorf("failed to upload file to S3: %w", err)
 	}
-	err = p.database.UploadImage(ctx, userID, url, description)
+	err = p.database.UploadImage(ctx, userID, storageKey, description)
 	if err != nil {
 		slog.Error("Database upload error", "error", err)
 		return "", fmt.Errorf("failed to upload image to database: %w", err)
