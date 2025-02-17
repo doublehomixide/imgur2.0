@@ -2,6 +2,7 @@ package minio
 
 import (
 	"context"
+	"errors"
 	"github.com/minio/minio-go/v7"
 	"pictureloader/models"
 	"sync"
@@ -23,6 +24,9 @@ func (m *MinioProvider) UploadFile(ctx context.Context, object models.ImageUnit,
 
 // GetFileURL - Получает StorageKey файла с minio
 func (m *MinioProvider) GetFileURL(ctx context.Context, imageURL string) (string, error) {
+	if imageURL == "" {
+		return "", errors.New("empty image url")
+	}
 	imgLink, err := m.client.PresignedGetObject(ctx, bucketName, imageURL, time.Hour*5, nil)
 	return imgLink.String(), err
 }

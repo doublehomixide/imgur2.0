@@ -42,7 +42,7 @@ func main() {
 	cache := redis.NewRedisClient(imageRepo)
 
 	imageService := service.NewPictureLoader(minioprov, imageRepo, cache)
-	userService := service.NewUserService(userRepo)
+	userService := service.NewUserService(userRepo, minioprov)
 	albumService := service.NewPostService(postRepo, minioprov, imageRepo, cache)
 	slog.Info("Image and User services initialized")
 
