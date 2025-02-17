@@ -1,13 +1,12 @@
 package models
 
 type Post struct {
-	ID         int     `gorm:"primaryKey;autoIncrement" json:"post_id"`
-	Name       string  `gorm:"not null" json:"name"`
-	UserID     int     `json:"user_id" gorm:"not null"`
-	Likes      []Like  `json:"likes" gorm:"foreignKey:PostID"`
-	LikesCount int     `json:"likes_count" gorm:"-"`
-	User       User    `gorm:"foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE"`
-	Images     []Image `gorm:"many2many:post_images"`
+	ID     int     `gorm:"primaryKey;autoIncrement" json:"post_id"`
+	Name   string  `gorm:"not null" json:"name"`
+	UserID int     `json:"user_id" gorm:"not null"`
+	Likes  []Like  `json:"likes" gorm:"foreignKey:PostID"`
+	User   User    `gorm:"foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE"`
+	Images []Image `gorm:"many2many:post_images"`
 }
 
 type PostUnit struct {

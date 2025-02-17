@@ -138,6 +138,22 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/posts/most-liked": {
+            "get": {
+                "description": "Returns a list of the most liked posts, ordered by like count in descending order.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Get most liked posts",
+                "responses": {}
+            }
+        },
         "/posts/my": {
             "get": {
                 "description": "Retrieves all posts of the currently authenticated user.",
@@ -348,6 +364,19 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/users/profile/me": {
+            "get": {
+                "description": "Returns the user profile based on the JWT token.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get user profile",
+                "responses": {}
+            }
+        },
         "/users/profile/password": {
             "patch": {
                 "description": "Allows an authenticated user to change their password",
@@ -369,6 +398,33 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/rest.passwordReqChange"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/users/profile/profile_picture": {
+            "post": {
+                "description": "Allows the user to upload a profile picture by providing the path (PictureSK).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Upload profile picture",
+                "parameters": [
+                    {
+                        "description": "Upload data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/rest.UploadProfilePicRequest"
                         }
                     }
                 ],
@@ -460,6 +516,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "rest.UploadProfilePicRequest": {
+            "type": "object",
+            "properties": {
+                "picture_sk": {
                     "type": "string"
                 }
             }

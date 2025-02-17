@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"gorm.io/gorm"
 	"pictureloader/models"
@@ -75,4 +76,57 @@ func (pr *PostRepository) LikePost(ctx context.Context, postID, userID int) erro
 		return err
 	}
 	return nil
+}
+
+func (pr *PostRepository) UnlikePost(ctx context.Context, postID, userID int) error {
+	return nil
+}
+
+func (pr *PostRepository) GetMostLikedPosts(ctx context.Context) ([]models.PostUnit, error) {
+	//Получает с постгреса структуры формата Name, {imageDesc, imageSK}, likes и затем
+	//анмаршалит  {imageDesc, imageSK} в map[string]string
+	type postsDBStruct struct {
+		Name   string          `json:"name"`
+		Images json.RawMessage `json:"images"`
+		Likes  int             `json:"likes_count"`
+	}
+	var postsDB []postsDBStruct
+	err := pr.db.Model(&models.Post{}).WithContext(ctx).
+		Raw(`
+						SELECT 
+				posts.name,
+				COALESCE(likes_count, 0) AS likes,
+				COALESCE(
+					JSON_OBJECT_AGG(images.description, images.storage_key) 
+					FILTER (WHERE images.id IS NOT NULL), 
+					'{}'
+				) AS images
+			FROM posts
+			LEFT JOIN (
+				SELECT post_id, COUNT(*) AS likes_count
+				FROM likes
+				GROUP BY post_id
+			) AS like_counts ON like_counts.post_id = posts.id
+			LEFT JOIN post_images ON post_images.post_id = posts.id
+			LEFT JOIN images ON images.id = post_images.image_id
+			GROUP BY posts.name, likes_count
+			ORDER BY likes_count DESC
+			LIMIT 3;
+	   `).Scan(&postsDB).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var result []models.PostUnit
+
+	for _, post := range postsDB {
+		images := make(map[string]string)
+		err := json.Unmarshal(post.Images, &images)
+		if err != nil {
+			continue
+		}
+		result = append(result, models.PostUnit{Name: post.Name, Images: images, Likes: post.Likes})
+	}
+
+	return result, nil
 }

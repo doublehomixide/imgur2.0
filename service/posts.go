@@ -23,6 +23,7 @@ type PostRepositoryInterface interface {
 	IsOwnerOfPost(ctx context.Context, userID int, albumID int) error
 	GetPostLikesCount(ctx context.Context, postID int) (int, error)
 	LikePost(ctx context.Context, postID, userID int) error
+	GetMostLikedPosts(ctx context.Context) ([]models.PostUnit, error)
 }
 
 type AlbumCacher interface {
@@ -240,4 +241,25 @@ func (als *PostService) LikePost(ctx context.Context, postID, userID int) error 
 		return err
 	}
 	return nil
+}
+
+func (als *PostService) GetMostLikedPosts(ctx context.Context) ([]models.PostUnit, error) {
+	//пограничный случай если imageDesc у картинок одинаковые в одном посте, нужно будет что-то придумать todo
+	posts, err := als.database.GetMostLikedPosts(ctx)
+
+	for _, post := range posts {
+		for k, v := range post.Images {
+			imageURL, err := als.storage.GetFileURL(ctx, v)
+			if err != nil {
+				continue
+			}
+			delete(post.Images, k)
+			post.Images[v] = imageURL
+		}
+	}
+	if err != nil {
+		slog.Error("Get most liked posts", "error", err)
+		return nil, err
+	}
+	return posts, nil
 }

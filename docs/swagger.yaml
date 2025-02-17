@@ -20,6 +20,11 @@ definitions:
       username:
         type: string
     type: object
+  rest.UploadProfilePicRequest:
+    properties:
+      picture_sk:
+        type: string
+    type: object
   rest.passwordReqChange:
     properties:
       password:
@@ -214,6 +219,18 @@ paths:
       summary: Like a post
       tags:
       - Posts
+  /posts/most-liked:
+    get:
+      consumes:
+      - application/json
+      description: Returns a list of the most liked posts, ordered by like count in
+        descending order.
+      produces:
+      - application/json
+      responses: {}
+      summary: Get most liked posts
+      tags:
+      - Posts
   /posts/my:
     get:
       consumes:
@@ -269,6 +286,15 @@ paths:
       summary: Delete user profile
       tags:
       - User
+  /users/profile/me:
+    get:
+      description: Returns the user profile based on the JWT token.
+      produces:
+      - application/json
+      responses: {}
+      summary: Get user profile
+      tags:
+      - User
   /users/profile/password:
     patch:
       consumes:
@@ -285,6 +311,25 @@ paths:
       - application/json
       responses: {}
       summary: Change user password
+      tags:
+      - User
+  /users/profile/profile_picture:
+    post:
+      consumes:
+      - application/json
+      description: Allows the user to upload a profile picture by providing the path
+        (PictureSK).
+      parameters:
+      - description: Upload data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rest.UploadProfilePicRequest'
+      produces:
+      - application/json
+      responses: {}
+      summary: Upload profile picture
       tags:
       - User
   /users/profile/username:

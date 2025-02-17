@@ -26,6 +26,7 @@ func PostRouter(api *mux.Router, server *PostServer) {
 	router := api.PathPrefix("/posts").Subrouter()
 	router.HandleFunc("", server.CreatePostHandler).Methods("POST")
 	router.HandleFunc("/my", server.GetMyPosts).Methods("GET")
+	router.HandleFunc("/most-liked", server.GetMostLikedPosts).Methods("GET")
 	router.HandleFunc("/{postID}", server.GetPost).Methods("GET")
 	router.HandleFunc("/{postID}/like", server.LikePostHandler).Methods("POST")
 	router.HandleFunc("/{postID}/{imageSK}", server.AddImageToPost).Methods("POST")
@@ -254,4 +255,23 @@ func (ps *PostServer) LikePostHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"status":"Post liked successfully"}`))
+}
+
+// GetMostLikedPosts returns the most liked posts.
+// @Summary     Get most liked posts
+// @Description Returns a list of the most liked posts, ordered by like count in descending order.
+// @Tags        Posts
+// @Accept      json
+// @Produce     json
+// @Router      /posts/most-liked [get]
+func (ps *PostServer) GetMostLikedPosts(w http.ResponseWriter, r *http.Request) {
+	posts, err := ps.service.GetMostLikedPosts(r.Context())
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	encoder := json.NewEncoder(w)
+	encoder.SetIndent("", "  ")
+	encoder.Encode(posts)
 }
