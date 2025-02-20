@@ -21,11 +21,16 @@ func (np *LikeNotificationRepository) CreateLikeNotification(postID, likerID, li
 	return nil
 }
 
-func (np *LikeNotificationRepository) GetAllLikeNotifications(postID int) ([]int, error) {
-	var userIDs []int
-	err := np.DB.Model(&database.LikesNotification{}).Where("post_id = ?", postID).Pluck("user_id", &userIDs).Error
+type LikeNotification struct {
+	PostID int `json:"post_id"`
+	Liker  int `json:"liker"`
+}
+
+func (np *LikeNotificationRepository) GetAllLikeNotifications(likedID int) ([]LikeNotification, error) {
+	var likeNotif []LikeNotification
+	err := np.DB.Model(&database.LikesNotification{}).Where("liked = ?", likedID).Find(&likeNotif).Error
 	if err != nil {
 		return nil, err
 	}
-	return userIDs, nil
+	return likeNotif, nil
 }

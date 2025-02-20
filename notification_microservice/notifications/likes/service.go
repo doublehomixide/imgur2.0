@@ -2,6 +2,7 @@ package likes
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 )
 
@@ -33,11 +34,18 @@ func (ns *NotificationService) ProcessLikeMessage(message []byte) error {
 	return nil
 }
 
-func (ns *NotificationService) GetAllLikeNotifications(postID int) ([]int, error) {
-	result, err := ns.repo.GetAllLikeNotifications(postID)
+func (ns *NotificationService) GetAllLikeNotifications(userID int) ([]string, error) {
+	likeNotif, err := ns.repo.GetAllLikeNotifications(userID)
 	if err != nil {
 		slog.Error("db error", "error", err)
 		return nil, err
 	}
+
+	var result []string
+
+	for _, el := range likeNotif {
+		result = append(result, fmt.Sprintf("User %d liked your post number %d", el.Liker, el.PostID))
+	}
+
 	return result, err
 }
