@@ -3,6 +3,7 @@ package likes
 import (
 	"gorm.io/gorm"
 	"pictureloader/notification_microservice/database"
+	"time"
 )
 
 func NewPSQLNotificationsRepository(db *gorm.DB) *LikeNotificationRepository {
@@ -22,8 +23,9 @@ func (np *LikeNotificationRepository) CreateLikeNotification(postID, likerID, li
 }
 
 type LikeNotification struct {
-	PostID int `json:"post_id"`
-	Liker  int `json:"liker"`
+	PostID    int       `json:"post_id"`
+	Liker     int       `json:"liker"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 func (np *LikeNotificationRepository) GetAllLikeNotifications(likedID int) ([]LikeNotification, error) {

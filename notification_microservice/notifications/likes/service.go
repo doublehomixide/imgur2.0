@@ -44,7 +44,10 @@ func (ns *NotificationService) GetAllLikeNotifications(userID int) ([]string, er
 	var result []string
 
 	for _, el := range likeNotif {
-		result = append(result, fmt.Sprintf("User %d liked your post number %d", el.Liker, el.PostID))
+		result = append(result, fmt.Sprintf("User %d liked your post number %d at %02d-%02d-%04d %02d:%02d",
+			el.Liker, el.PostID,
+			el.CreatedAt.Day(), el.CreatedAt.Month(), el.CreatedAt.Year(),
+			el.CreatedAt.Hour(), el.CreatedAt.Minute()))
 	}
 
 	return result, err
