@@ -33,6 +33,20 @@ func (rr *RedisRepo) Get(ctx context.Context, key string) (string, error) {
 	return result, err
 }
 
+func (rr *RedisRepo) GetPost(ctx context.Context, postID int) (models.PostUnit, bool, error) {
+	redisResult, err := rr.rdb.Get(ctx, strconv.Itoa(postID)).Result()
+	if errors.Is(err, redis.Nil) {
+		return models.PostUnit{}, false, nil
+	}
+	if err != nil {
+		return models.PostUnit{}, false, err
+	}
+	var result models.PostUnit
+	json.Unmarshal([]byte(redisResult), &result)
+
+	return result, true, nil
+}
+
 func (rr *RedisRepo) Delete(ctx context.Context, key string) error {
 	return rr.rdb.Del(ctx, key).Err()
 }
@@ -50,7 +64,7 @@ func (rr *RedisRepo) SetMostLikedPosts(ctx context.Context, posts []models.PostU
 	if err != nil {
 		return errors.New("json marshal posts error")
 	}
-	_, err = rr.rdb.Set(ctx, "MostLikedPosts", string(jsonData), time.Minute*30).Result()
+	_, err = rr.rdb.Set(ctx, "MostLikedPosts", string(jsonData), time.Minute*1).Result()
 	if err != nil {
 		return err
 	}
@@ -68,4 +82,15 @@ func (rr *RedisRepo) GetMostLikedPosts(ctx context.Context) ([]models.PostUnit, 
 		return nil, err
 	}
 	return posts, nil
+}
+
+func (rr *RedisRepo) SetPost(ctx context.Context, postID int, resultJSON string) (bool, error) {
+	err := rr.rdb.Set(ctx, strconv.Itoa(postID), resultJSON, time.Hour*10).Err()
+	if errors.Is(err, redis.Nil) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }

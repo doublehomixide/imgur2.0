@@ -20,23 +20,57 @@ func (pr *PostRepository) CreatePost(ctx context.Context, post *models.Post) err
 	return pr.db.WithContext(ctx).Create(&post).Error
 }
 
-func (pr *PostRepository) CreatePostAndImage(ctx context.Context, postImage *models.PostImage) error {
-	return pr.db.WithContext(ctx).Create(&postImage).Error
+func (pr *PostRepository) CreatePostAndImage(ctx context.Context, postID int, imageSK string) error {
+	query := `
+		INSERT INTO post_images (post_id, image_id)
+		SELECT ?, id FROM images WHERE storage_key = ?`
+
+	result := pr.db.WithContext(ctx).Exec(query, postID, imageSK)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("no such image with SK %s", imageSK)
+	}
+
+	return nil
 }
 
-// GetPostData returns post name, hashmap where key is s3 storage StorageKey, value is description, error
-func (pr *PostRepository) GetPostData(ctx context.Context, postID int) (string, map[string]string, error) {
-	var post models.Post
-	if err := pr.db.WithContext(ctx).Preload("Images").First(&post, postID).Error; err != nil {
-		return "", nil, err
+func (pr *PostRepository) GetPost(ctx context.Context, postID int) (models.PostUnit, error) {
+	type postsDBStruct struct {
+		Name   string          `json:"name"`
+		Images json.RawMessage `json:"images"`
+		Likes  int             `json:"likes_count"`
+	}
+	var post postsDBStruct
+	err := pr.db.Model(&models.Post{}).WithContext(ctx).
+		Raw(`SELECT posts.name AS Name,
+       COALESCE(likes_count, 0) AS Likes,
+       COALESCE(JSON_OBJECT_AGG(images.description, images.storage_key), '[]') AS Images
+FROM posts
+LEFT JOIN (
+    SELECT post_id, COUNT(*) AS likes_count
+    FROM likes
+    GROUP BY post_id
+) AS like_counts ON like_counts.post_id = posts.id
+LEFT JOIN post_images ON post_images.post_id = posts.id
+LEFT JOIN images ON post_images.image_id = images.id
+WHERE posts.id = ?
+GROUP BY posts.name, posts.id, like_counts.likes_count;
+       `, postID).Scan(&post).Error
+	if err != nil {
+		return models.PostUnit{}, err
 	}
 
 	images := make(map[string]string)
-	for _, image := range post.Images {
-		images[image.StorageKey] = image.Description
+	err = json.Unmarshal(post.Images, &images)
+	if err != nil {
+		return models.PostUnit{}, err
 	}
+	result := models.PostUnit{Name: post.Name, Images: images, Likes: post.Likes}
 
-	return post.Name, images, nil
+	return result, nil
 }
 
 func (pr *PostRepository) GetUserPostIDs(ctx context.Context, userID int) ([]int, error) {
@@ -51,8 +85,20 @@ func (pr *PostRepository) DeletePostByID(ctx context.Context, postID int) error 
 	return pr.db.WithContext(ctx).Delete(&models.Post{}, postID).Error
 }
 
-func (pr *PostRepository) DeletePostImage(ctx context.Context, postID int, imageID int) error {
-	return pr.db.WithContext(ctx).Delete(&models.PostImage{}, "post_id = ? AND image_id = ?", postID, imageID).Error
+func (pr *PostRepository) DeletePostImage(ctx context.Context, postID int, imageSK string) error {
+	query := `DELETE FROM post_images 
+		USING images 
+		WHERE post_images.post_id = ? 
+		AND post_images.image_id = images.id 
+		AND images.storage_key = ?`
+	result := pr.db.WithContext(ctx).Exec(query, postID, imageSK)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("no such post-image relation for post_id %d and image_sk %s", postID, imageSK)
+	}
+	return nil
 }
 
 func (pr *PostRepository) IsOwnerOfPost(ctx context.Context, userID int, postID int) error {

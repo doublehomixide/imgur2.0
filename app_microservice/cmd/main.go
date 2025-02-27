@@ -46,7 +46,7 @@ func main() {
 
 	imageService := service2.NewPictureLoader(minioprov, imageRepo, cache)
 	userService := service2.NewUserService(userRepo, minioprov)
-	postService := service2.NewPostService(postRepo, minioprov, imageRepo, cache, *rabbitbroker)
+	postService := service2.NewPostService(postRepo, minioprov, cache, *rabbitbroker)
 	slog.Info("Image and User services initialized")
 
 	picturesServer := rest2.PictureNewServer(imageService)

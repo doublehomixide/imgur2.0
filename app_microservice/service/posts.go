@@ -9,54 +9,44 @@ import (
 	"pictureloader/app_microservice/broker"
 	"pictureloader/app_microservice/image_storage"
 	"pictureloader/app_microservice/models"
-	"strconv"
-	"time"
 	"unicode/utf8"
 )
 
 type PostRepositoryInterface interface {
 	CreatePost(ctx context.Context, album *models.Post) error
-	CreatePostAndImage(ctx context.Context, albumImage *models.PostImage) error
-	GetPostData(ctx context.Context, albumID int) (string, map[string]string, error)
+	CreatePostAndImage(ctx context.Context, postID int, imageSK string) error
 	GetUserPostIDs(ctx context.Context, userID int) ([]int, error)
 	DeletePostByID(ctx context.Context, albumID int) error
-	DeletePostImage(ctx context.Context, albumID int, imageID int) error
+	DeletePostImage(ctx context.Context, postID int, imageSK string) error
 	IsOwnerOfPost(ctx context.Context, userID int, albumID int) error
-	GetPostLikesCount(ctx context.Context, postID int) (int, error)
 	LikePost(ctx context.Context, postID, userID int) error
 	GetMostLikedPosts(ctx context.Context) ([]models.PostUnit, error)
 	GetPostOwner(ctx context.Context, postID int) (int, error)
+	GetPost(ctx context.Context, postID int) (models.PostUnit, error)
 }
 
 type AlbumCacher interface {
 	InvalidatePost(ctx context.Context, postID int) (bool, error)
 	SetMostLikedPosts(ctx context.Context, posts []models.PostUnit) error
 	GetMostLikedPosts(ctx context.Context) ([]models.PostUnit, error)
-	Get(ctx context.Context, key string) (string, error)
-	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error
-	Delete(ctx context.Context, key string) error
-}
-
-type ImageWorker interface {
-	GetImageIDBySK(ctx context.Context, imageSK string) (int, error)
+	GetPost(ctx context.Context, postID int) (models.PostUnit, bool, error)
+	SetPost(ctx context.Context, postID int, resultJSON string) (bool, error)
 }
 
 type PostService struct {
-	database      PostRepositoryInterface
-	storage       image_storage.ImageStorage
-	imageDatabase ImageWorker
-	cache         AlbumCacher
-	broker        broker.RabbitBroker
+	database PostRepositoryInterface
+	storage  image_storage.ImageStorage
+	cache    AlbumCacher
+	broker   broker.RabbitBroker
 }
 
 func NewPostService(database PostRepositoryInterface, storage image_storage.ImageStorage,
-	imageDatabase ImageWorker, cacher AlbumCacher, broker broker.RabbitBroker) *PostService {
+	cacher AlbumCacher, broker broker.RabbitBroker) *PostService {
 	return &PostService{
-		database:      database,
-		storage:       storage,
-		imageDatabase: imageDatabase,
-		cache:         cacher,
-		broker:        broker,
+		database: database,
+		storage:  storage,
+		cache:    cacher,
+		broker:   broker,
 	}
 }
 
@@ -73,55 +63,45 @@ func (als *PostService) CreatePost(ctx context.Context, post *models.Post) error
 }
 
 func (als *PostService) GetPost(ctx context.Context, postID int) (models.PostUnit, error) {
+	cachedResult, isExist, err := als.cache.GetPost(ctx, postID)
+	if err != nil {
+		slog.Error("Get post", "error", err)
+	}
 
-	cachedResult, err := als.cache.Get(ctx, strconv.Itoa(postID))
-	if err != nil && !errors.Is(err, redis.Nil) {
+	if !isExist {
+		slog.Info("No such key in redis", "postID", postID)
+	}
+
+	if err == nil && isExist {
+		return cachedResult, nil
+	}
+
+	post, err := als.database.GetPost(ctx, postID)
+	if err != nil {
 		slog.Error("Get post", "error", err)
 		return models.PostUnit{}, err
 	}
-	if cachedResult != "" {
-		slog.Info("Get album from cache", "postID", postID)
-		var album models.PostUnit
-		json.Unmarshal([]byte(cachedResult), &album)
-		return album, nil
-	}
 
-	likesCount, err := als.database.GetPostLikesCount(ctx, postID)
-	if err != nil {
-		slog.Error("Get post likes count", "error", err)
-		return models.PostUnit{}, err
-	}
-
-	postName, images, err := als.database.GetPostData(ctx, postID)
-	if err != nil {
-		slog.Error("Get images from post", "error", err)
-		return models.PostUnit{}, err
-	}
-
-	updatedImages := make(map[string]string)
-
-	for key, value := range images {
-		presignedURL, err := als.storage.GetFileURL(ctx, key)
+	for k, v := range post.Images {
+		imageURL, err := als.storage.GetFileURL(ctx, v)
 		if err != nil {
+			slog.Error("Get image URL", "error", err)
 			continue
 		}
-		updatedImages[value] = presignedURL
+		post.Images[k] = imageURL
 	}
 
-	result := models.PostUnit{
-		Name:   postName,
-		Images: updatedImages,
-		Likes:  likesCount,
-	}
+	resultJSON, _ := json.Marshal(post)
 
-	resultJSON, _ := json.Marshal(result)
-
-	err = als.cache.Set(ctx, strconv.Itoa(postID), string(resultJSON), time.Hour*5)
+	ok, err := als.cache.SetPost(ctx, postID, string(resultJSON))
 	if err != nil {
 		slog.Error("Set cache for post", "error", err)
 	}
+	if err == nil && !ok {
+		slog.Info("Set post no such post", "postID", postID)
+	}
 
-	return result, nil
+	return post, nil
 }
 
 // GetUserPosts userID -> hashmap where key is album ID, value is models.PostUnit
@@ -133,6 +113,7 @@ func (als *PostService) GetUserPosts(ctx context.Context, userID int) (map[int]m
 
 	result := make(map[int]models.PostUnit)
 
+	//n+1 problem todo
 	for _, albumID := range postIDs {
 		album, err := als.GetPost(ctx, albumID)
 		if err != nil {
@@ -151,15 +132,7 @@ func (als *PostService) AppendImageToPost(ctx context.Context, postID int, image
 		return err
 	}
 
-	imageID, err := als.imageDatabase.GetImageIDBySK(ctx, imageSK)
-	if err != nil {
-		slog.Info("Add image to post", "error", err)
-		return err
-	}
-
-	postImageModel := &models.PostImage{PostID: postID, ImageID: imageID}
-
-	err = als.database.CreatePostAndImage(ctx, postImageModel)
+	err = als.database.CreatePostAndImage(ctx, postID, imageSK)
 	if err != nil {
 		slog.Error("Add image to post", "error", err)
 		return err
@@ -205,18 +178,14 @@ func (als *PostService) DeletePost(ctx context.Context, postID int, userID int) 
 }
 
 func (als *PostService) DeleteImageFromPost(ctx context.Context, postID int, imageSK string, userID int) error {
+	//todo можно в 1 запрос думаю
 	err := als.database.IsOwnerOfPost(ctx, userID, postID)
 	if err != nil {
 		slog.Error("Database delete error", "error", err)
 		return err
 	}
 
-	imageID, err := als.imageDatabase.GetImageIDBySK(ctx, imageSK)
-	if err != nil {
-		slog.Info("Delete image from post", "error", err)
-		return err
-	}
-	err = als.database.DeletePostImage(ctx, postID, imageID)
+	err = als.database.DeletePostImage(ctx, postID, imageSK)
 	if err != nil {
 		slog.Error("Delete image from post", "error", err)
 		return err
@@ -278,6 +247,7 @@ func (als *PostService) GetMostLikedPosts(ctx context.Context) ([]models.PostUni
 		return posts, nil
 	}
 
+	//если кеш не найден
 	posts, err = als.database.GetMostLikedPosts(ctx)
 	for _, post := range posts {
 		for k, v := range post.Images {
@@ -299,6 +269,5 @@ func (als *PostService) GetMostLikedPosts(ctx context.Context) ([]models.PostUni
 		slog.Error("Cache most liked posts", "error", err)
 		return nil, err
 	}
-
 	return posts, nil
 }

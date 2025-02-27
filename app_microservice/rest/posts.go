@@ -3,6 +3,7 @@ package rest
 import (
 	"context"
 	"encoding/json"
+	"github.com/go-chi/httprate"
 	jwt2 "github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -33,6 +34,7 @@ func PostRouter(api *mux.Router, server *PostServer) {
 	router.HandleFunc("/{postID}", server.DeletePost).Methods("DELETE")
 	router.HandleFunc("/{postID}/{imageSK}", server.DeletePostImage).Methods("DELETE")
 	router.Use(jwtUtils.AuthMiddleware)
+	router.Use(httprate.LimitByRealIP(3, 3*time.Second))
 }
 
 // CreatePostHandler creates a new post for the user.
@@ -273,5 +275,6 @@ func (ps *PostServer) GetMostLikedPosts(w http.ResponseWriter, r *http.Request) 
 	}
 	encoder := json.NewEncoder(w)
 	encoder.SetIndent("", "  ")
+	encoder.SetEscapeHTML(false)
 	encoder.Encode(posts)
 }
