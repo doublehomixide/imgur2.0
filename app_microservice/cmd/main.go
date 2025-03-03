@@ -12,8 +12,8 @@ import (
 	config "pictureloader/app_microservice/cfg"
 	postgres2 "pictureloader/app_microservice/database/postgres"
 	_ "pictureloader/app_microservice/docs"
+	rest2 "pictureloader/app_microservice/handler"
 	"pictureloader/app_microservice/image_storage/minio"
-	rest2 "pictureloader/app_microservice/rest"
 	service2 "pictureloader/app_microservice/service"
 )
 

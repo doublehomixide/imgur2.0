@@ -397,7 +397,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/rest.passwordReqChange"
+                            "$ref": "#/definitions/handler.passwordReqChange"
                         }
                     }
                 ],
@@ -424,7 +424,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/rest.UploadProfilePicRequest"
+                            "$ref": "#/definitions/handler.UploadProfilePicRequest"
                         }
                     }
                 ],
@@ -451,7 +451,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/rest.usernameReqChange"
+                            "$ref": "#/definitions/handler.usernameReqChange"
                         }
                     }
                 ],
@@ -520,7 +520,7 @@ const docTemplate = `{
                 }
             }
         },
-        "rest.UploadProfilePicRequest": {
+        "handler.UploadProfilePicRequest": {
             "type": "object",
             "properties": {
                 "picture_sk": {
@@ -528,7 +528,7 @@ const docTemplate = `{
                 }
             }
         },
-        "rest.passwordReqChange": {
+        "handler.passwordReqChange": {
             "type": "object",
             "properties": {
                 "password": {
@@ -536,7 +536,7 @@ const docTemplate = `{
                 }
             }
         },
-        "rest.usernameReqChange": {
+        "handler.usernameReqChange": {
             "type": "object",
             "properties": {
                 "username": {
